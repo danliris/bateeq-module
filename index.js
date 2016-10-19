@@ -1,5 +1,6 @@
 var inventoryMap = new Map();
 inventoryMap.set("storage", require('./src/managers/inventory/storage-manager'));
+inventoryMap.set("store", require('./src/managers/inventory/store-manager'));
 inventoryMap.set("transfer-in-doc", require('./src/managers/inventory/transfer-in-doc-manager'));
 inventoryMap.set("transfer-out-doc", require('./src/managers/inventory/transfer-out-doc-manager'));
 inventoryMap.set("inventory", require('./src/managers/inventory/inventory-manager'));
@@ -34,6 +35,7 @@ merchandiserMap.set("efr-pk-pba", require('./src/managers/merchandiser/efr-pk-pb
 module.exports = {
     inventory: {
         StorageManager: inventoryMap.get("storage"),
+        StoreManager: inventoryMap.get("store"),
         TransferInDocManager: inventoryMap.get("transfer-in-doc"),
         TransferOutDocManager: inventoryMap.get("transfer-out-doc"),
         InventoryManager: inventoryMap.get("inventory"),
@@ -83,6 +85,14 @@ module.exports = {
         SPKBarangEmbalaseManager: require('./src/managers/merchandiser/efr-pk-pba-manager'),
         SPKBarangJadiReturManager: require('./src/managers/merchandiser/efr-pk-pbr-manager'),
         map: merchandiserMap
+    },
+    posmaster: {
+        BankManager: require('./src/managers/pos-master/bank-manager'),
+        CardTypeManager: require('./src/managers/pos-master/card-type-manager'),
+        PaymentTypeManager: require('./src/managers/pos-master/payment-type-manager')
+    },
+    pos: {
+        PaymentManager: require('./src/managers/pos/pos-payment-doc-manager')
     },
     ValidationError: require('./src/validation-error')
 }
