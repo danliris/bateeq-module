@@ -21,10 +21,7 @@ function getData() {
 
     payment.code = code;
     payment.date = now;
-    payment.totalProduct = 1;
-    payment.subTotal = 0;
     payment.discount = 0;
-    payment.grandTotal = 0;
     payment.reference = '';
     payment.remark = '';
     
@@ -36,8 +33,8 @@ function getData() {
         articleVariant: variant,
         quantity: 1,
         price: 100000,
-        discount1: 0.1,
-        discount2: 0.05,
+        discount1: 0,
+        discount2: 0,
         margin: 0,
         specialDiscount: 0,
         total: 100000
@@ -60,8 +57,8 @@ function getData() {
         card : 'Credit', //Debit | Credit
         cardNumber : '1000200030004000',
         cardName : 'CardName',
-        cashAmount : paymentTotal,
-        cardAmount : 0
+        cashAmount : 0,
+        cardAmount : paymentTotal
     })
     return payment;
 }  
