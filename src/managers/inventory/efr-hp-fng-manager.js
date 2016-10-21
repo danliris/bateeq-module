@@ -8,43 +8,34 @@ require('mongodb-toolkit');
 var BateeqModels = require('bateeq-models');
 var map = BateeqModels.map;
 
-var FinishedGoodsDoc = BateeqModels.inventory.FinishedGoodsDoc;
-var TransferInDoc = BateeqModels.inventory.TransferInDoc;
-var TransferInItem = BateeqModels.inventory.TransferInItem;
+var Payment = BateeqModels.pos.Payment; 
 var TransferOutDoc = BateeqModels.inventory.TransferOutDoc;
-var TransferOutItem = BateeqModels.inventory.TransferOutItem;
-var ArticleVariant = BateeqModels.core.article.ArticleVariant;
 var generateCode = require('../../utils/code-generator');
 
-const moduleId = "EFR-HP/FNG";
-const moduleIdIn = "EFR-TB/FNG";
-const moduleIdOut = "EFR-KB/SAB";
-module.exports = class FinishedGoodsManager {
+
+module.exports = class PaymentManager {
     constructor(db, user) {
         this.db = db;
         this.user = user;
-        this.finishedGoodsDocCollection = this.db.use(map.inventory.FinishedGoodsDoc);
-        this.transferInDocCollection = this.db.use(map.inventory.TransferInDoc);
-        this.transferOutDocCollection = this.db.use(map.inventory.TransferOutDoc);
-
-        var StorageManager = require('./storage-manager');
-        this.storageManager = new StorageManager(db, user);
-
+        this.paymentCollection = this.db.use(map.pos.PaymentDoc);
+        
         var ArticleVariantManager = require('../core/article/article-variant-manager');
         this.articleVariantManager = new ArticleVariantManager(db, user);
-
-        var InventoryManager = require('./inventory-manager');
-        this.inventoryManager = new InventoryManager(db, user);
-
-        var TransferInDocManager = require('./transfer-in-doc-manager');
-        this.transferInDocManager = new TransferInDocManager(db, user);
-
-        var TransferOutDocManager = require('./transfer-out-doc-manager');
+        
+        var StoreManager = require('../inventory/store-manager');
+        this.storeManager = new StoreManager(db, user); 
+        
+        var BankManager = require('../pos-master/bank-manager');
+        this.bankManager = new BankManager(db, user);  
+        
+        var CardTypeManager = require('../pos-master/card-type-manager');
+        this.cardTypeManager = new CardTypeManager(db, user);  
+        
+        var PaymentTypeManager = require('../pos-master/payment-type-manager');
+        this.paymentTypeManager = new PaymentTypeManager(db, user);  
+        
+        var TransferOutDocManager = require('../inventory/transfer-out-doc-manager');
         this.transferOutDocManager = new TransferOutDocManager(db, user);
-
-        var ModuleManager = require('../core/module-manager');
-        this.moduleManager = new ModuleManager(db, user);
-
     }
 
     read(paging) {
@@ -69,7 +60,7 @@ module.exports = class FinishedGoodsManager {
                     'code': {
                         '$regex': regex
                     }
-                };
+                }; 
                 var $or = {
                     '$or': [filterCode]
                 };
@@ -78,13 +69,13 @@ module.exports = class FinishedGoodsManager {
             }
 
 
-            this.finishedGoodsDocCollection
+            this.paymentCollection
                 .where(query)
                 .page(_paging.page, _paging.size)
                 .orderBy(_paging.order, _paging.asc)
                 .execute()
-                .then(finishedGoodsDocs => {
-                    resolve(finishedGoodsDocs);
+                .then(payments => {
+                    resolve(payments);
                 })
                 .catch(e => {
                     reject(e);
@@ -94,13 +85,15 @@ module.exports = class FinishedGoodsManager {
 
     getById(id) {
         return new Promise((resolve, reject) => {
+            if (id === '')
+                resolve(null);
             var query = {
                 _id: new ObjectId(id),
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(finishedGoodsDoc => {
-                    resolve(finishedGoodsDoc);
+                .then(payment => {
+                    resolve(payment);
                 })
                 .catch(e => {
                     reject(e);
@@ -110,13 +103,15 @@ module.exports = class FinishedGoodsManager {
 
     getByIdOrDefault(id) {
         return new Promise((resolve, reject) => {
+            if (id === '')
+                resolve(null);
             var query = {
                 _id: new ObjectId(id),
                 _deleted: false
             };
             this.getSingleOrDefaultByQuery(query)
-                .then(finishedGoodsDoc => {
-                    resolve(finishedGoodsDoc);
+                .then(payment => {
+                    resolve(payment);
                 })
                 .catch(e => {
                     reject(e);
@@ -124,15 +119,15 @@ module.exports = class FinishedGoodsManager {
         });
     }
 
-    getByCodeOrDefault(code) {
+    getByCode(code) {
         return new Promise((resolve, reject) => {
             var query = {
                 code: code,
                 _deleted: false
             };
-            this.getSingleOrDefaultByQuery(query)
-                .then(finishedGoodsDoc => {
-                    resolve(finishedGoodsDoc);
+            this.getSingleByQuery(query)
+                .then(payment => {
+                    resolve(payment);
                 })
                 .catch(e => {
                     reject(e);
@@ -142,10 +137,10 @@ module.exports = class FinishedGoodsManager {
 
     getSingleByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.finishedGoodsDocCollection
+            this.paymentCollection
                 .single(query)
-                .then(finishedGoodsDoc => {
-                    resolve(finishedGoodsDoc);
+                .then(payment => {
+                    resolve(payment);
                 })
                 .catch(e => {
                     reject(e);
@@ -155,10 +150,10 @@ module.exports = class FinishedGoodsManager {
 
     getSingleOrDefaultByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.finishedGoodsDocCollection
+            this.paymentCollection
                 .singleOrDefault(query)
-                .then(finishedGoodsDoc => {
-                    resolve(finishedGoodsDoc);
+                .then(payment => {
+                    resolve(payment);
                 })
                 .catch(e => {
                     reject(e);
@@ -166,179 +161,157 @@ module.exports = class FinishedGoodsManager {
         })
     }
 
-    create(finishedGoodDoc) {
+    create(payment) {
         return new Promise((resolve, reject) => {
-            this._validate(finishedGoodDoc)
-                .then(validFinishedGoodDoc => {
-                    var codeTransferIn = generateCode(moduleIdIn);
-                    var codeTransferOut = generateCode(moduleIdOut);
-                    var codeFinishedGood = generateCode(moduleId);
-                    var getMethods = [];
-
-                    //Create Promise Create Transfer In and generate Model
-                    var validTransferInDoc = {};
-                    validTransferInDoc.code = codeTransferIn;
-                    validTransferInDoc.reference = codeFinishedGood;
-                    validTransferInDoc.sourceId = finishedGoodDoc.sourceId;
-                    validTransferInDoc.destinationId = finishedGoodDoc.destinationId;
-                    validTransferInDoc.items = [];
-                    for (var item of finishedGoodDoc.items) {
-                        var newitem = {};
-                        newitem.articleVariantId = item.articleVariant._id;
-                        newitem.quantity = item.quantity;
-                        validTransferInDoc.items.push(newitem);
-                    }
-                    validTransferInDoc = new TransferInDoc(validTransferInDoc);
-                    getMethods.push(this.transferInDocManager.create(validTransferInDoc));
-
-                    //Create Promise Create Transfer Out and generate Model
+            payment.code = generateCode("payment");
+            this._validate(payment)
+                .then(validPayment => {   
                     var validTransferOutDoc = {};
-                    validTransferOutDoc.code = codeTransferOut;
-                    validTransferOutDoc.reference = codeFinishedGood;
-                    validTransferOutDoc.sourceId = finishedGoodDoc.sourceId;
-                    validTransferOutDoc.destinationId = finishedGoodDoc.destinationId;
+                    validTransferOutDoc.code = generateCode("payment");
+                    validTransferOutDoc.reference = validPayment.code;
+                    validTransferOutDoc.sourceId = validPayment.store.storageId;
+                    validTransferOutDoc.destinationId = validPayment.store.storageId;
                     validTransferOutDoc.items = [];
-                    for (var item of finishedGoodDoc.items) {
-                        for (var finishing of item.articleVariant.finishings) {
-                            var newitem = {};
-                            newitem.articleVariantId = finishing.articleVariant._id;
-                            newitem.quantity = finishing.quantity;
-                            validTransferOutDoc.items.push(newitem);
-                        }
-                    }
+                    for (var item of validPayment.items) {
+                        var newitem = {};
+                        newitem.articleVariantId = item.articleVariantId;
+                        newitem.quantity = item.quantity;
+                        validTransferOutDoc.items.push(newitem);
+                    } 
                     validTransferOutDoc = new TransferOutDoc(validTransferOutDoc);
-                    getMethods.push(this.transferOutDocManager.create(validTransferOutDoc));
-
-                    //Create Transfer In
-                    //Create Transfer Out 
-                    Promise.all(getMethods)
+                    
+                    var createData = [];
+                    createData.push(this.paymentCollection.insert(validPayment));
+                    createData.push(this.transferOutDocManager.create(validTransferOutDoc));
+                    
+                    Promise.all(createData)
                         .then(results => {
-                            var transferInResultId = results[0];
-                            var transferOutResultId = results[1];
-                            getMethods = [];
-                            //Create Promise Get Transfer In using ID
-                            getMethods.push(this.transferInDocManager.getByIdOrDefault(transferInResultId));
-                            //Create Promise Get Transfer Out using ID
-                            getMethods.push(this.transferOutDocManager.getByIdOrDefault(transferOutResultId));
-
-                            //Get Transfer In
-                            //Get Transfer Out
-                            Promise.all(getMethods)
-                                .then(transferResults => {
-                                    getMethods = [];
-                                    var transferInData = transferResults[0];
-                                    var transferOutData = transferResults[1];
-
-                                    //Create Finishing Good Model
-                                    var validFinishedGoodDoc = {};
-                                    validFinishedGoodDoc.code = codeFinishedGood;
-                                    validFinishedGoodDoc.transferInDocumentId = transferInResultId;
-                                    validFinishedGoodDoc.transferInDocument = transferInData;
-                                    validFinishedGoodDoc.transferOutDocumentId = transferOutResultId;
-                                    validFinishedGoodDoc.transferOutDocument = transferOutData;
-                                    validFinishedGoodDoc.storageId = finishedGoodDoc.sourceId;
-                                    validFinishedGoodDoc = new FinishedGoodsDoc(validFinishedGoodDoc);
-
-                                    //Create Finishing Good
-                                    this.finishedGoodsDocCollection.insert(validFinishedGoodDoc)
-                                        .then(id => {
-                                            resolve(id);
-                                        })
-                                        .catch(e => {
-                                            reject(e);
-                                        });
-                                })
-                                .catch(e => {
-                                    reject(e);
-                                });
+                            resolve(results[0]);
                         })
                         .catch(e => {
                             reject(e);
-                        });
+                        })
                 })
                 .catch(e => {
                     reject(e);
-                });
+                })
         });
     }
 
-    update(finishedGoodDoc) {
+    update(payment) {
         return new Promise((resolve, reject) => {
-            resolve(null);
+            this._validate(payment)
+                .then(validPayment => {
+                    this.paymentCollection.update(validPayment)
+                        .then(id => {
+                            resolve(id);
+                        })
+                        .catch(e => {
+                            reject(e);
+                        })
+                })
+                .catch(e => {
+                    reject(e);
+                })
         });
     }
 
-    delete(finishedGoodDoc) {
+    delete(payment) {
         return new Promise((resolve, reject) => {
-            resolve(null);
+            this._validate(payment)
+                .then(validPayment => {
+                    validPayment._deleted = true;
+                    this.paymentCollection.update(validPayment)
+                        .then(id => {
+                            resolve(id);
+                        })
+                        .catch(e => {
+                            reject(e);
+                        })
+                })
+                .catch(e => {
+                    reject(e);
+                })
         });
     }
-
-    _validate(finishedGoodDoc) {
+ 
+    _validate(payment) {
         var errors = {};
         return new Promise((resolve, reject) => {
-            var valid = finishedGoodDoc; 
-            this.moduleManager.getByCode(moduleId)
-                .then(module => {
-                    var config = module.config; 
-                    var getItemComponents = [];
+            var valid = new Payment(payment); 
+            
+            var paymentDetailError = {};
+            if (!valid.code || valid.code == '')
+                errors["code"] = "code is required";
+            if (!payment.storeId || payment.storeId == '')
+                errors["storeId"] = "storeId is required"; 
+            if (!payment.paymentDetail.paymentTypeId || payment.paymentDetail.paymentTypeId == '')
+                paymentDetailError["paymentTypeId"] = "paymentTypeId is required";
+            
+            for (var prop in paymentDetailError) {
+                errors["paymentDetail"] = paymentDetailError;
+                break;
+            }
+                                
 
-                    if (!valid.sourceId || valid.sourceId == '')
-                        errors["sourceId"] = "sourceId is required";
-                    else {
-                        if (config) {
-                            if (config.source) {
-                                var isAny = false;
-                                if (config.source.type == "selection") {
-                                    for (var sourceId of config.source.value) {
-                                        if (sourceId.toString() == valid.sourceId.toString()) {
-                                            isAny = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                else {
-                                    if (config.source.value.toString() == valid.sourceId.toString())
-                                        isAny = true;
-                                }
-                                if (!isAny)
-                                    errors["sourceId"] = "sourceId is not valid";
-                            }
-                        }
+            //Get Payment data
+            var getPayment = this.paymentCollection.singleOrDefault({
+                "$and": [{
+                    _id: {
+                        '$ne': new ObjectId(valid._id)
                     }
+                }, {
+                        code: valid.code
+                    }]
+            });  
+            var getStore = this.storeManager.getByIdOrDefault(payment.storeId);
+            var getBank = this.bankManager.getByIdOrDefault(payment.paymentDetail.bankId);
+            var getCardType = this.cardTypeManager.getByIdOrDefault(payment.paymentDetail.cardTypeId);
+            var getPaymentType = this.paymentTypeManager.getByIdOrDefault(payment.paymentDetail.paymentTypeId);
+            var getVoucher = Promise.resolve(null);
+            var getItems = [];
+            if (valid.items && valid.items.length > 0) {
+                for (var item of valid.items) {  
+                    getItems.push(this.articleVariantManager.getByIdOrDefault(item.articleVariantId));
+                }
+            }
+            else {
+                errors["items"] = "items is required";
+            }
+            
+            Promise.all([getPayment, getStore, getBank, getCardType, getPaymentType, getVoucher].concat(getItems))
+               .then(results => {
+                    var _payment = results[0];
+                    var _store = results[1];
+                    var _bank = results[2];
+                    var _cardType = results[3];
+                    var _paymentType = results[4];
+                    var _voucherType = results[5];
 
-                    if (!valid.destinationId || valid.destinationId == '')
-                        errors["destinationId"] = "destinationId is required";
-                    else {
-                        if (config) {
-                            if (config.destination) {
-                                var isAny = false;
-                                if (config.destination.type == "selection") {
-                                    for (var destinationId of config.destination.value) {
-                                        if (destinationId.toString() == valid.destinationId.toString()) {
-                                            isAny = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                else {
-                                    if (config.destination.value.toString() == valid.destinationId.toString())
-                                        isAny = true;
-                                }
-                                if (!isAny)
-                                    errors["destinationId"] = "destinationId is not valid";
-                            }
-                        }
-                    }
+                    if (_payment) {
+                        errors["code"] = "code already exists";
+                    }  
                     
-                    if (!valid.items || valid.items.length == 0) {
-                        errors["items"] = "items is required";
+                    if (!_store) {
+                        errors["storeId"] = "storeId not found";
                     }
                     else {
+                        valid.storeId = _store._id;
+                        valid.store = _store;
+                    } 
+                      
+                    valid.totalProduct = 0;
+                    valid.subTotal = 0;
+                    valid.grandTotal = 0;
+                    var articleVariants = results.slice(6, results.length) 
+                    if (articleVariants.length > 0) {
                         var itemErrors = [];
-                        for (var item of valid.items) {
+                        for (var variant of articleVariants) {
+                            var index = articleVariants.indexOf(variant);
+                            var item = valid.items[index];
                             var itemError = {};
-                            if (!item.articleVariantId || item.articleVariantId == "") {
+
+                            if (!item.articleVariantId || item.articleVariantId == '') {
                                 itemError["articleVariantId"] = "articleVariantId is required";
                             }
                             else {
@@ -348,62 +321,36 @@ module.exports = class FinishedGoodsManager {
                                         itemError["articleVariantId"] = "articleVariantId already exists on another detail";
                                     }
                                 }
-                                var articleVariantError = {};
-                                if (item.articleVariant) {
-                                    if (!item.articleVariant.finishings || item.articleVariant.finishings.length == 0) {
-                                        articleVariantError["finishings"] = "Component is required";
-                                    }
-                                    else {
-                                        var finishingErrors = [];
-                                        for (var finishing of item.articleVariant.finishings) {
-                                            var getItemComponent = Promise.resolve(null);
-                                            var finishingError = {};
-                                            if (!finishing.articleVariantId || finishing.articleVariantId == "") {
-                                                finishingError["articleVariantId"] = "Component ArticleVariantId is required";
-                                            }
-                                            else {
-                                                for (var i = item.articleVariant.finishings.indexOf(finishing) + 1; i < item.articleVariant.finishings.length; i++) {
-                                                    var otherItem = item.articleVariant.finishings[i];
-                                                    if (finishing.articleVariantId == otherItem.articleVariantId) {
-                                                        finishingError["articleVariantId"] = "Component articleVariantId already exists on another detail";
-                                                    }
-                                                }
-                                            }
-                                            if (finishing.quantity == undefined || (finishing.quantity && finishing.quantity == '')) {
-                                                finishingError["quantity"] = "quantity is required";
-                                            }
-                                            else if (parseInt(finishing.quantity) <= 0) {
-                                                finishingError["quantity"] = "quantity must be greater than 0";
-                                            }
-                                            else {
-                                                getItemComponent = this.inventoryManager.getByStorageIdAndArticleVarianId(valid.sourceId, finishing.articleVariantId);
-                                            }
-                                            getItemComponents.push(getItemComponent)
-                                            finishingErrors.push(finishingError);
-                                        }
-                                        for (var finishingError of finishingErrors) {
-                                            for (var prop in finishingError) {
-                                                articleVariantError.finishings = finishingErrors;
-                                                break;
-                                            }
-                                            if (articleVariantError.finishings)
-                                                break;
-                                        }
-                                    }
-                                }
-                                for (var prop in articleVariantError) {
-                                    itemError["articleVariant"] = articleVariantError;
-                                    break;
-                                }
                             }
+                            if (!variant) {
+                                itemError["articleVariantId"] = "articleVariantId not found";
+                            }
+                            else {
+                                item.articleVariantId = variant._id;
+                                item.articleVariant = variant;
+                                if(variant.size)
+                                    if(variant.size.name)
+                                        item.size = variant.size.name;
+                                item.price = parseInt(variant.domesticSale);
+                            }
+
                             if (item.quantity == undefined || (item.quantity && item.quantity == '')) {
                                 itemError["quantity"] = "quantity is required";
+                                item.quantity = 0;
                             }
                             else if (parseInt(item.quantity) <= 0) {
                                 itemError["quantity"] = "quantity must be greater than 0";
-                            }
+                            } 
+                            
+                            item.total = (parseInt(item.quantity) * parseInt(item.price)) * (1 - (parseInt(item.discount1) / 100)) * (1 - (parseInt(item.discount2) / 100)) * (1 - (parseInt(item.specialDiscount) / 100))
+                            valid.subTotal = parseInt(valid.subTotal) + parseInt(item.total);
+                            valid.totalProduct = parseInt(valid.totalProduct) + parseInt(item.quantity);
                             itemErrors.push(itemError);
                         }
+                        var totalDiscount = parseInt(valid.subTotal) * parseInt(valid.discount) / 100;
+                        var totalVoucher = 0;
+                        valid.grandTotal = parseInt(valid.subTotal) - parseInt(totalDiscount) - parseInt(totalVoucher);
+                        
                         for (var itemError of itemErrors) {
                             for (var prop in itemError) {
                                 errors.items = itemErrors;
@@ -412,62 +359,106 @@ module.exports = class FinishedGoodsManager {
                             if (errors.items)
                                 break;
                         }
+                    } 
+                    
+                    if (!_paymentType) {
+                        paymentDetailError["paymentTypeId"] = "paymentTypeId not found";
                     }
+                    else {
+                        valid.paymentDetail.paymentTypeId = _paymentType._id;
+                        valid.paymentDetail.paymentType = _paymentType;
+                        
+                        if(_paymentType.name.toLowerCase() == "card" || _paymentType.name.toLowerCase() == "partial"){
+                            if (!payment.paymentDetail.bankId || payment.paymentDetail.bankId == '')
+                                paymentDetailError["bankId"] = "bankId is required";
+                            if (!_bank) {
+                                paymentDetailError["bankId"] = "bankId not found";
+                            }
+                            else {
+                                valid.paymentDetail.bankId = _bank._id;
+                                valid.paymentDetail.bank = _bank;
+                            } 
+                            
+                            if (!valid.paymentDetail.card || valid.paymentDetail.card == '')
+                                paymentDetailError["card"] = "card is required";
+                            else {
+                                if(valid.paymentDetail.card.toLowerCase() != 'debit' && valid.paymentDetail.card.toLowerCase() != 'credit')
+                                    paymentDetailError["card"] = "card must be debit or credit"; 
+                                else { 
+                                    if(valid.paymentDetail.card.toLowerCase() != 'debit')
+                                    {
+                                        if (!payment.paymentDetail.cardTypeId || payment.paymentDetail.cardTypeId == '')
+                                            paymentDetailError["cardTypeId"] = "cardTypeId is required"; 
+                                        if (!_cardType) {
+                                            paymentDetailError["cardTypeId"] = "cardTypeId not found";
+                                        }
+                                        else {
+                                            valid.paymentDetail.cardTypeId = _cardType._id;
+                                            valid.paymentDetail.cardType = _cardType;
+                                        }   
+                                    }
+                                }
+                            }
+                                
+                            if (!valid.paymentDetail.cardNumber || valid.paymentDetail.cardNumber == '')
+                                paymentDetailError["cardNumber"] = "cardNumber is required";
+                                
+                            if (!valid.paymentDetail.cardName || valid.paymentDetail.cardName == '')
+                                paymentDetailError["cardName"] = "cardName is required"; 
+                                
+                            if (valid.paymentDetail.cardAmount == undefined || (valid.paymentDetail.cardAmount && valid.paymentDetail.cardAmount == '')) {
+                                paymentDetailError["cardAmount"] = "cardAmount is required";
+                                valid.paymentDetail.cardAmount = 0;
+                            } 
+                            else if(parseInt(valid.paymentDetail.cardAmount) <= 0) {
+                                paymentDetailError["cardAmount"] = "cardAmount must be greater than 0";
+                            }  
+                        }  
+                        
+                        if(_paymentType.name.toLowerCase() == "cash" || _paymentType.name.toLowerCase() == "partial"){ 
+                            if (valid.paymentDetail.cashAmount == undefined || (valid.paymentDetail.cashAmount && valid.paymentDetail.cashAmount == '')) {
+                                paymentDetailError["cashAmount"] = "cashAmount is required";
+                                valid.paymentDetail.cashAmount = 0;
+                            } 
+                            else if(parseInt(valid.paymentDetail.cashAmount) <= 0) {
+                                paymentDetailError["cashAmount"] = "cashAmount must be greater than 0";
+                            } 
+                        } 
+                        
+                        if(_paymentType.name.toLowerCase() == "partial")
+                            if((parseInt(valid.paymentDetail.cashAmount) + parseInt(valid.paymentDetail.cardAmount)) < parseInt(valid.grandTotal))
+                                errors["grandTotal"] = "grandTotal is bigger than payment";  
+                                
+                        if(_paymentType.name.toLowerCase() == "card")
+                            if(parseInt(valid.paymentDetail.cardAmount) < parseInt(valid.grandTotal))
+                                errors["grandTotal"] = "grandTotal is bigger than payment";  
+                                
+                        if(_paymentType.name.toLowerCase() == "cash")
+                            if(parseInt(valid.paymentDetail.cashAmount) < parseInt(valid.grandTotal))
+                                errors["grandTotal"] = "grandTotal is bigger than payment";  
+                    } 
+                    
+                    for (var prop in paymentDetailError) {
+                        errors["paymentDetail"] = paymentDetailError;
+                        break;
+                    }
+            
                     for (var prop in errors) {
                         var ValidationError = require('../../validation-error');
                         reject(new ValidationError('data does not pass validation', errors));
                     }
 
-                    Promise.all(getItemComponents)
-                        .then(itemComponents => {
-                            var itemErrors = [];
-                            for (var item of valid.items) {
-                                var itemError = {};
-                                var articleVariantError = {};
-                                var finishingErrors = [];
-                                var index = 0;
-                                for (var finishing of item.articleVariant.finishings) {
-                                    var finishingError = {};
-                                    if (itemComponents[index]) {
-                                        if (finishing.quantity > itemComponents[index].quantity) {
-                                            finishingError["quantity"] = "Quantity is bigger than Stock";
-                                        }
-                                    }
-                                    index++;
-                                    finishingErrors.push(finishingError);
-                                }
-                                for (var finishingError of finishingErrors) {
-                                    for (var prop in finishingError) {
-                                        articleVariantError.finishings = finishingErrors;
-                                        break;
-                                    }
-                                    if (articleVariantError.finishings)
-                                        break;
-                                }
-                                for (var prop in articleVariantError) {
-                                    itemError["articleVariant"] = articleVariantError;
-                                    break;
-                                }
-                                itemErrors.push(itemError);
-                            }
-                            for (var itemError of itemErrors) {
-                                for (var prop in itemError) {
-                                    errors.items = itemErrors;
-                                    break;
-                                }
-                                if (errors.items)
-                                    break;
-                            }
-                            for (var prop in errors) {
-                                var ValidationError = require('../../validation-error');
-                                reject(new ValidationError('data does not pass validation', errors));
-                            }
-                            resolve(valid);
-                        })
+                    valid = new Payment(valid);
+                    valid.stamp(this.user.username, 'manager');
+                    resolve(valid);
                 })
-                .catch(e => {
-                    reject(new Error(`Unable to load module:${moduleId}`));
-                });
+                .catch(e => { 
+                    for (var prop in errors) {
+                        var ValidationError = require('../../validation-error');
+                        reject(new ValidationError('data does not pass validation', errors));
+                    } 
+                    reject(e);
+                })
         });
     }
 };

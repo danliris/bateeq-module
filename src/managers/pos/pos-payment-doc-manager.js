@@ -8,7 +8,8 @@ require('mongodb-toolkit');
 var BateeqModels = require('bateeq-models');
 var map = BateeqModels.map;
 
-var Payment = BateeqModels.pos.Payment;
+var Payment = BateeqModels.pos.Payment; 
+var TransferOutDoc = BateeqModels.inventory.TransferOutDoc;
 var generateCode = require('../../utils/code-generator');
 
 
@@ -33,6 +34,8 @@ module.exports = class PaymentManager {
         var PaymentTypeManager = require('../pos-master/payment-type-manager');
         this.paymentTypeManager = new PaymentTypeManager(db, user);  
         
+        var TransferOutDocManager = require('../inventory/transfer-out-doc-manager');
+        this.transferOutDocManager = new TransferOutDocManager(db, user);
     }
 
     read(paging) {
@@ -162,10 +165,28 @@ module.exports = class PaymentManager {
         return new Promise((resolve, reject) => {
             payment.code = generateCode("payment");
             this._validate(payment)
-                .then(validPayment => { 
-                    this.paymentCollection.insert(validPayment)
-                        .then(id => {
-                            resolve(id);
+                .then(validPayment => {   
+                    var validTransferOutDoc = {};
+                    validTransferOutDoc.code = generateCode("payment");
+                    validTransferOutDoc.reference = validPayment.code;
+                    validTransferOutDoc.sourceId = validPayment.store.storageId;
+                    validTransferOutDoc.destinationId = validPayment.store.storageId;
+                    validTransferOutDoc.items = [];
+                    for (var item of validPayment.items) {
+                        var newitem = {};
+                        newitem.articleVariantId = item.articleVariantId;
+                        newitem.quantity = item.quantity;
+                        validTransferOutDoc.items.push(newitem);
+                    } 
+                    validTransferOutDoc = new TransferOutDoc(validTransferOutDoc);
+                    
+                    var createData = [];
+                    createData.push(this.paymentCollection.insert(validPayment));
+                    createData.push(this.transferOutDocManager.create(validTransferOutDoc));
+                    
+                    Promise.all(createData)
+                        .then(results => {
+                            resolve(results[0]);
                         })
                         .catch(e => {
                             reject(e);
@@ -356,23 +377,27 @@ module.exports = class PaymentManager {
                             else {
                                 valid.paymentDetail.bankId = _bank._id;
                                 valid.paymentDetail.bank = _bank;
-                            }
-                            
-                            if (!payment.paymentDetail.cardTypeId || payment.paymentDetail.cardTypeId == '')
-                                paymentDetailError["cardTypeId"] = "cardTypeId is required"; 
-                            if (!_cardType) {
-                                paymentDetailError["cardTypeId"] = "cardTypeId not found";
-                            }
-                            else {
-                                valid.paymentDetail.cardTypeId = _cardType._id;
-                                valid.paymentDetail.cardType = _cardType;
-                            }   
+                            } 
                             
                             if (!valid.paymentDetail.card || valid.paymentDetail.card == '')
                                 paymentDetailError["card"] = "card is required";
                             else {
                                 if(valid.paymentDetail.card.toLowerCase() != 'debit' && valid.paymentDetail.card.toLowerCase() != 'credit')
                                     paymentDetailError["card"] = "card must be debit or credit"; 
+                                else { 
+                                    if(valid.paymentDetail.card.toLowerCase() != 'debit')
+                                    {
+                                        if (!payment.paymentDetail.cardTypeId || payment.paymentDetail.cardTypeId == '')
+                                            paymentDetailError["cardTypeId"] = "cardTypeId is required"; 
+                                        if (!_cardType) {
+                                            paymentDetailError["cardTypeId"] = "cardTypeId not found";
+                                        }
+                                        else {
+                                            valid.paymentDetail.cardTypeId = _cardType._id;
+                                            valid.paymentDetail.cardType = _cardType;
+                                        }   
+                                    }
+                                }
                             }
                                 
                             if (!valid.paymentDetail.cardNumber || valid.paymentDetail.cardNumber == '')
@@ -401,15 +426,15 @@ module.exports = class PaymentManager {
                         } 
                         
                         if(_paymentType.name.toLowerCase() == "partial")
-                            if((valid.paymentDetail.cashAmount + valid.paymentDetail.cardAmount) < valid.grandTotal)
+                            if((parseInt(valid.paymentDetail.cashAmount) + parseInt(valid.paymentDetail.cardAmount)) < parseInt(valid.grandTotal))
                                 errors["grandTotal"] = "grandTotal is bigger than payment";  
                                 
                         if(_paymentType.name.toLowerCase() == "card")
-                            if(valid.paymentDetail.cardAmount < valid.grandTotal)
+                            if(parseInt(valid.paymentDetail.cardAmount) < parseInt(valid.grandTotal))
                                 errors["grandTotal"] = "grandTotal is bigger than payment";  
                                 
                         if(_paymentType.name.toLowerCase() == "cash")
-                            if(valid.paymentDetail.cashAmount < valid.grandTotal)
+                            if(parseInt(valid.paymentDetail.cashAmount) < parseInt(valid.grandTotal))
                                 errors["grandTotal"] = "grandTotal is bigger than payment";  
                     } 
                     
