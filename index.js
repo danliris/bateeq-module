@@ -94,5 +94,9 @@ module.exports = {
     pos: {
         PaymentManager: require('./src/managers/pos/pos-payment-doc-manager')
     },
+    promo: {
+        PromoManager: require('./src/managers/promo/promo-doc-manager'),
+        RewardTypeManager: require('./src/managers/promo/reward-type-manager')
+    },
     ValidationError: require('./src/validation-error')
 }
