@@ -342,7 +342,31 @@ module.exports = class PaymentManager {
                                 itemError["quantity"] = "quantity must be greater than 0";
                             } 
                             
-                            item.total = (parseInt(item.quantity) * parseInt(item.price)) * (1 - (parseInt(item.discount1) / 100)) * (1 - (parseInt(item.discount2) / 100)) * (1 - (parseInt(item.specialDiscount) / 100))
+                            if (item.discount1 == undefined || (item.discount1 && item.discount1 == '')) {
+                                itemError["discount1"] = "discount1 is required";
+                                item.discount1 = 0;
+                            }
+                            else if (parseInt(item.discount1) <= 0) {
+                                itemError["discount1"] = "discount1 must be greater than 0";
+                            } 
+                            
+                            if (item.discount2 == undefined || (item.discount2 && item.discount2 == '')) {
+                                itemError["discount2"] = "discount2 is required";
+                                item.discount2 = 0;
+                            }
+                            else if (parseInt(item.discount2) <= 0) {
+                                itemError["discount2"] = "discount2 must be greater than 0";
+                            } 
+                            
+                            if (item.discountNominal == undefined || (item.discountNominal && item.discountNominal == '')) {
+                                itemError["discountNominal"] = "discountNominal is required";
+                                item.discountNominal = 0;
+                            }
+                            else if (parseInt(item.discountNominal) <= 0) {
+                                itemError["discountNominal"] = "discountNominal must be greater than 0";
+                            } 
+                            
+                            item.total = (((parseInt(item.quantity) * parseInt(item.price)) * (1 - (parseInt(item.discount1) / 100)) * (1 - (parseInt(item.discount2) / 100))) - (parseInt(item.discountNominal))) * (1 - (parseInt(item.specialDiscount) / 100))
                             valid.subTotal = parseInt(valid.subTotal) + parseInt(item.total);
                             valid.totalProduct = parseInt(valid.totalProduct) + parseInt(item.quantity);
                             itemErrors.push(itemError);
