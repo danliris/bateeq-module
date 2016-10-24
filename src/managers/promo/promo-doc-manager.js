@@ -104,13 +104,32 @@ module.exports = class PromoManager {
         });
     }
 
-     getByCode(code) {
+    getByCode(code) {
         return new Promise((resolve, reject) => {
             var query = {
                 code: code,
                 _deleted: false
             };
             this.getSingleByQuery(query)
+                .then(promo => {
+                    resolve(promo);
+                })
+                .catch(e => {
+                    reject(e);
+                });
+        });
+    }
+    
+    getByStoreVariantDatetime(storeId, variantId, datetime) {
+        return new Promise((resolve, reject) => {
+            var query = {
+                stores: {'$elemMatch': { _id: new ObjectId(storeId)}},
+                promoProducts: {'$elemMatch': { articleVariantId: new ObjectId(variantId)}},
+                validDateFrom: {'$lte': new Date(datetime)},
+                validDateTo: {'$gte': new Date(datetime)},
+                _deleted: false
+            };
+            this.getSingleOrDefaultByQuery(query)
                 .then(promo => {
                     resolve(promo);
                 })

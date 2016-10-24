@@ -41,7 +41,7 @@ function getData() {
     var promoProduct = new PromoProduct();
     promoProduct.articleVariantId = variant._id;
     promoProduct.articleVariant = variant;
-    promoProduct.promoDiscounts = promoDiscount;
+    promoProduct.promoDiscount = promoDiscount;
 
     promo.promoProducts.push(promoProduct);
     
