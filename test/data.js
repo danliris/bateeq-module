@@ -750,9 +750,79 @@ function getSertPaymentTypes(db) {
     });
 }
 
+function getSertRewardTypes(db) {
+
+    var rewardTypes = [{
+        code: "RT-DISKON",
+        name: "Diskon",
+        description: "Unit test data: Diskon Reward type."
+    }, {
+        code: "RT-DISKON-PRODUK-TERTENTU",
+        name: "Diskon Produk Tertentu",
+        description: "Unit test data: Diskon Produk Tertentu Reward type."
+    }, {
+        code: "RT-PRODUK-TERTENTU",
+        name: "Produk Tertentu",
+        description: "Unit test data: Produk Tertentu Reward type."
+    }, {
+        code: "RT-HARGA-SPESIAL",
+        name: "Harga Spesial",
+        description: "Unit test data: Harga Spesial Reward type."
+    }, {
+        code: "RT-VOUCHER",
+        name: "Voucher",
+        description: "Unit test data: Voucher Reward type."
+    }];
+
+
+    var RewardTypeManager = require("../src/managers/promo/reward-type-manager");
+    return new Promise((resolve, reject) => {
+        var manager = new RewardTypeManager(db, {
+            username: "unit-test"
+        });
+        var promises = [];
+
+        for (var rewardType of rewardTypes) {
+            var promise = new Promise((resolve, reject) => {
+                var _rewardType = rewardType;
+                manager.getSingleOrDefaultByQuery({
+                        code: _rewardType.code
+                    })
+                    .then(data => {
+                        if (data)
+                            resolve(data);
+                        else {
+                            manager.create(_rewardType)
+                                .then(id => {
+                                    manager.getById(id).then(createdData => {
+                                        resolve(createdData);
+                                    });
+                                })
+                                .catch(e => {
+                                    reject(e);
+                                });
+                        }
+                    })
+                    .catch(e => {
+                        reject(e);
+                    });
+            });
+            promises.push(promise);
+        }
+
+        Promise.all(promises)
+            .then(rewardTypes => {
+                resolve(rewardTypes);
+            })
+            .catch(e => {
+                reject(e);
+            });
+    });
+}
+
 module.exports = function(db) {
     return new Promise((resolve, reject) => {
-        Promise.all([getSertStorages(db), getSertVariants(db), getSertSuppliers(db), getSertBanks(db), getSertCardTypes(db), getSertPaymentTypes(db)])
+        Promise.all([getSertStorages(db), getSertVariants(db), getSertSuppliers(db), getSertBanks(db), getSertCardTypes(db), getSertPaymentTypes(db), getSertRewardTypes(db)])
             .then(results => {
                 var storages = {};
                 var variants = {};
@@ -760,6 +830,7 @@ module.exports = function(db) {
                 var banks = {};
                 var cardTypes = {};
                 var paymentTypes = {};
+                var rewardTypes = {};
 
                 for (var storage of results[0])
                     storages[storage.code] = storage;
@@ -767,17 +838,20 @@ module.exports = function(db) {
                 for (var variant of results[1])
                     variants[variant.code] = variant;
                 
-                 for (var supplier of results[2])
+                for (var supplier of results[2])
                     suppliers[supplier.code] = supplier; 
                     
-                 for (var bank of results[3])
+                for (var bank of results[3])
                     banks[bank.code] = bank;
                     
-                 for (var cardType of results[4])
+                for (var cardType of results[4])
                     cardTypes[cardType.code] = cardType;
                     
-                 for (var paymentType of results[5])
+                for (var paymentType of results[5])
                     paymentTypes[paymentType.code] = paymentType;
+
+                for (var rewardType of results[6])
+                    rewardTypes[rewardType.code] = rewardType;
 
                 Promise.all([getSertModules(db, storages), getSertStores(db, storages)])
                     .then(results => { 
@@ -798,6 +872,7 @@ module.exports = function(db) {
                             banks : banks,
                             cardTypes : cardTypes,
                             paymentTypes : paymentTypes,
+                            rewardTypes : rewardTypes,
                             modules: modules
                         });
                     })

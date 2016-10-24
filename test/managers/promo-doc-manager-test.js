@@ -2,9 +2,19 @@ var should = require('should');
 var helper = require('../helper');
 var validate = require('bateeq-models').validator.promo;
 var manager;
+var testData;
 
 function getData() {
+    var rewardType = testData.rewardTypes["RT-DISKON"];
+    var variant = testData.variants["UT-AV1"];
+    var stores = [];
+    stores.push(testData.stores["ST-FNG"]);
+    stores.push(testData.stores["ST-BJB"]);
+    stores.push(testData.stores["ST-BJR"]);
+
     var Promo = require('bateeq-models').promo.Promo;
+    var PromoProduct = require('bateeq-models').promo.PromoProduct;
+    var PromoDiscount = require('bateeq-models').promo.PromoDiscount;
     var promo = new Promo();
 
     var now = new Date();
@@ -14,22 +24,47 @@ function getData() {
     promo.code = code;
     promo.name = `name[${code}]`;
     promo.description = `description for ${code}`; 
+    promo.validDateFrom = new Date(); 
+    promo.validDateTo= new Date(); 
+    promo.stores = stores;
+    promo.promoProducts = [];
+     
+    var promoDiscount = new PromoDiscount();
+    promoDiscount.reward = 'Discount Product';      //Discount Product
+    promoDiscount.unit = 'Percentage';              //Percentage, Nominal
+    promoDiscount.discount1 = '10';
+    promoDiscount.discount2 = '5';
+    promoDiscount.nominal = '0';
+    promoDiscount.rewardTypeId = rewardType._id;
+    promoDiscount.rewardType = rewardType;
+    
+    var promoProduct = new PromoProduct();
+    promoProduct.articleVariantId = variant._id;
+    promoProduct.articleVariant = variant;
+    promoProduct.promoDiscounts = promoDiscount;
 
+    promo.promoProducts.push(promoProduct);
+    
     return promo;
 }
 
 before('#00. connect db', function(done) {
     helper.getDb()
         .then(db => {
-            var PromoManager = require('../../src/managers/promo/promo-doc-manager');
-            manager = new PromoManager(db, {
-                username: 'unit-test'
-            });
-            done();
+            var data = require("../data");
+            data(db)
+                .then(result => { 
+                    var PromoManager = require('../../src/managers/promo/promo-doc-manager');
+                    manager = new PromoManager(db, {
+                        username: 'unit-test'
+                    });
+                    testData = result; 
+                    done();
+                });
         })
         .catch(e => {
             done(e);
-        })
+        });
 });
 
 var createdId;
