@@ -129,7 +129,7 @@ module.exports = class PromoManager {
                 validDateTo: {'$gte': new Date(datetime)},
                 _deleted: false
             };
-            this.getSingleOrDefaultByQuery(query)
+            this.getFirstOrDefaultByQuery(query)
                 .then(promo => {
                     resolve(promo);
                 })
@@ -156,6 +156,19 @@ module.exports = class PromoManager {
         return new Promise((resolve, reject) => {
             this.promoCollection
                 .singleOrDefault(query)
+                .then(promo => {
+                    resolve(promo);
+                })
+                .catch(e => {
+                    reject(e);
+                });
+        })
+    }
+    
+    getFirstOrDefaultByQuery(query) {
+        return new Promise((resolve, reject) => {
+            this.promoCollection
+                .firstOrDefault(query)
                 .then(promo => {
                     resolve(promo);
                 })
