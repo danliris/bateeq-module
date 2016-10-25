@@ -181,12 +181,12 @@ module.exports = class PaymentManager {
                     validTransferOutDoc = new TransferOutDoc(validTransferOutDoc);
                     
                     var createData = [];
-                    createData.push(this.paymentCollection.insert(validPayment));
                     createData.push(this.transferOutDocManager.create(validTransferOutDoc));
+                    createData.push(this.paymentCollection.insert(validPayment));
                     
                     Promise.all(createData)
                         .then(results => {
-                            resolve(results[0]);
+                            resolve(results[1]);
                         })
                         .catch(e => {
                             reject(e);
@@ -346,7 +346,7 @@ module.exports = class PaymentManager {
                                 itemError["discount1"] = "discount1 is required";
                                 item.discount1 = 0;
                             }
-                            else if (parseInt(item.discount1) <= 0) {
+                            else if (parseInt(item.discount1) < 0) {
                                 itemError["discount1"] = "discount1 must be greater than 0";
                             } 
                             
@@ -354,7 +354,7 @@ module.exports = class PaymentManager {
                                 itemError["discount2"] = "discount2 is required";
                                 item.discount2 = 0;
                             }
-                            else if (parseInt(item.discount2) <= 0) {
+                            else if (parseInt(item.discount2) < 0) {
                                 itemError["discount2"] = "discount2 must be greater than 0";
                             } 
                             
@@ -362,7 +362,7 @@ module.exports = class PaymentManager {
                                 itemError["discountNominal"] = "discountNominal is required";
                                 item.discountNominal = 0;
                             }
-                            else if (parseInt(item.discountNominal) <= 0) {
+                            else if (parseInt(item.discountNominal) < 0) {
                                 itemError["discountNominal"] = "discountNominal must be greater than 0";
                             } 
                             
@@ -370,7 +370,7 @@ module.exports = class PaymentManager {
                                 itemError["margin"] = "margin is required";
                                 item.margin = 0;
                             }
-                            else if (parseInt(item.margin) <= 0) {
+                            else if (parseInt(item.margin) < 0) {
                                 itemError["margin"] = "margin must be greater than 0";
                             } 
                             
@@ -378,7 +378,7 @@ module.exports = class PaymentManager {
                                 itemError["specialDiscount"] = "specialDiscount is required";
                                 item.margin = 0;
                             }
-                            else if (parseInt(item.specialDiscount) <= 0) {
+                            else if (parseInt(item.specialDiscount) < 0) {
                                 itemError["specialDiscount"] = "specialDiscount must be greater than 0";
                             } 
                             
