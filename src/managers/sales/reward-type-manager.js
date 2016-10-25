@@ -8,14 +8,14 @@ require('mongodb-toolkit');
 var BateeqModels = require('bateeq-models');
 var map = BateeqModels.map;
 
-var Store = BateeqModels.inventory.Store;
+var RewardType = BateeqModels.sales.RewardType;
 //var generateCode = require('../../utils/code-generator');
  
-module.exports = class StoreManager {
+module.exports = class RewardTypeManager {
     constructor(db, user) {
         this.db = db;
         this.user = user;
-        this.storeCollection = this.db.use(map.inventory.Store);
+        this.rewardTypeCollection = this.db.use(map.sales.RewardType);
     }
 
     read(paging) {
@@ -54,13 +54,13 @@ module.exports = class StoreManager {
             }
 
 
-            this.storeCollection
+            this.rewardTypeCollection
                 .where(query)
                 .page(_paging.page, _paging.size)
                 .orderBy(_paging.order, _paging.asc)
                 .execute()
-                .then(stores => {
-                    resolve(stores);
+                .then(rewardTypes => {
+                    resolve(rewardTypes);
                 })
                 .catch(e => {
                     reject(e);
@@ -77,8 +77,8 @@ module.exports = class StoreManager {
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(store => {
-                    resolve(store);
+                .then(rewardType => {
+                    resolve(rewardType);
                 })
                 .catch(e => {
                     reject(e);
@@ -95,8 +95,8 @@ module.exports = class StoreManager {
                 _deleted: false
             };
             this.getSingleOrDefaultByQuery(query)
-                .then(store => {
-                    resolve(store);
+                .then(rewardType => {
+                    resolve(rewardType);
                 })
                 .catch(e => {
                     reject(e);
@@ -111,8 +111,8 @@ module.exports = class StoreManager {
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(store => {
-                    resolve(store);
+                .then(rewardType => {
+                    resolve(rewardType);
                 })
                 .catch(e => {
                     reject(e);
@@ -122,10 +122,10 @@ module.exports = class StoreManager {
 
     getSingleByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.storeCollection
+            this.rewardTypeCollection
                 .single(query)
-                .then(store => {
-                    resolve(store);
+                .then(rewardType => {
+                    resolve(rewardType);
                 })
                 .catch(e => {
                     reject(e);
@@ -135,10 +135,10 @@ module.exports = class StoreManager {
 
     getSingleOrDefaultByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.storeCollection
+            this.rewardTypeCollection
                 .singleOrDefault(query)
-                .then(store => {
-                    resolve(store);
+                .then(rewardType => {
+                    resolve(rewardType);
                 })
                 .catch(e => {
                     reject(e);
@@ -146,12 +146,12 @@ module.exports = class StoreManager {
         })
     }
 
-    create(store) {
+    create(rewardType) {
         return new Promise((resolve, reject) => {
-            //store.code = generateCode("store");
-            this._validate(store)
-                .then(validStore => { 
-                    this.storeCollection.insert(validStore)
+            //rewardType.code = generateCode("rewardType");
+            this._validate(rewardType)
+                .then(validRewardType => {
+                    this.rewardTypeCollection.insert(validRewardType)
                         .then(id => {
                             resolve(id);
                         })
@@ -165,11 +165,11 @@ module.exports = class StoreManager {
         });
     }
 
-    update(store) {
+    update(rewardType) {
         return new Promise((resolve, reject) => {
-            this._validate(store)
-                .then(validStore => {
-                    this.storeCollection.update(validStore)
+            this._validate(rewardType)
+                .then(validRewardType => {
+                    this.rewardTypeCollection.update(validRewardType)
                         .then(id => {
                             resolve(id);
                         })
@@ -183,12 +183,12 @@ module.exports = class StoreManager {
         });
     }
 
-    delete(store) {
+    delete(rewardType) {
         return new Promise((resolve, reject) => {
-            this._validate(store)
-                .then(validStore => {
-                    validStore._deleted = true;
-                    this.storeCollection.update(validStore)
+            this._validate(rewardType)
+                .then(validRewardType => {
+                    validRewardType._deleted = true;
+                    this.rewardTypeCollection.update(validRewardType)
                         .then(id => {
                             resolve(id);
                         })
@@ -202,12 +202,12 @@ module.exports = class StoreManager {
         });
     }
  
-    _validate(store) {
+    _validate(rewardType) {
         var errors = {};
         return new Promise((resolve, reject) => {
-            var valid = new Store(store);
+            var valid = new RewardType(rewardType);
             // 1. begin: Declare promises.
-            var getStore = this.storeCollection.singleOrDefault({
+            var getRewardType = this.rewardTypeCollection.singleOrDefault({
                 "$and": [{
                     _id: {
                         '$ne': new ObjectId(valid._id)
@@ -219,13 +219,13 @@ module.exports = class StoreManager {
             // 1. end: Declare promises.
 
             // 2. begin: Validation.
-            Promise.all([getStore])
+            Promise.all([getRewardType])
                 .then(results => {
-                    var _store = results[0];
+                    var _rewardType = results[0];
 
                     if (!valid.code || valid.code == '')
                         errors["code"] = "code is required";
-                    else if (_store) {
+                    else if (_rewardType) {
                         errors["code"] = "code already exists";
                     }
 

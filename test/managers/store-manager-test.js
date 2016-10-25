@@ -1,10 +1,10 @@
 var should = require('should');
 var helper = require('../helper');
-var validate = require('bateeq-models').validator.inventory;
+var validate = require('bateeq-models').validator.master;
 var manager;
 
 function getData() {
-    var Store = require('bateeq-models').inventory.Store;
+    var Store = require('bateeq-models').master.Store;
     var store = new Store();
 
     var now = new Date();
@@ -21,7 +21,7 @@ function getData() {
 before('#00. connect db', function(done) {
     helper.getDb()
         .then(db => {
-            var StoreManager = require('../../src/managers/inventory/store-manager');
+            var StoreManager = require('../../src/managers/master/store-manager');
             manager = new StoreManager(db, {
                 username: 'unit-test'
             });

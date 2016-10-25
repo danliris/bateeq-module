@@ -1,10 +1,10 @@
 var should = require('should');
 var helper = require('../helper');
-var validate = require('bateeq-models').validator.posmaster;
+var validate = require('bateeq-models').validator.master;
 var manager;
 
 function getData() {
-    var CardType = require('bateeq-models').posmaster.CardType;
+    var CardType = require('bateeq-models').master.CardType;
     var cardType = new CardType();
 
     var now = new Date();
@@ -21,7 +21,7 @@ function getData() {
 before('#00. connect db', function(done) {
     helper.getDb()
         .then(db => {
-            var CardTypeManager = require('../../src/managers/pos-master/card-type-manager');
+            var CardTypeManager = require('../../src/managers/master/card-type-manager');
             manager = new CardTypeManager(db, {
                 username: 'unit-test'
             });

@@ -7,28 +7,27 @@ function getData() {
     var store = testData.stores["ST-FNG"]; 
     var bank = testData.banks["BA-BCA"];                    //BCA, MANDIRI, BRI, dkk
     var cardType = testData.cardTypes["CT-VISA"];           //CARD, MASTERCARD, VISA
-    var paymentType = testData.paymentTypes["PA-CARD"];     //CASH, CARD, PARTIAL
     var variant = testData.variants["UT-AV1"];
  
-    var Payment = require('bateeq-models').pos.Payment;
-    var PaymentItem = require('bateeq-models').pos.PaymentItem;
-    var PaymentDetail = require('bateeq-models').pos.PaymentDetail;
-    var payment = new Payment();
+    var Sales = require('bateeq-models').sales.Sales;
+    var SalesItem = require('bateeq-models').sales.SalesItem;
+    var SalesDetail = require('bateeq-models').sales.SalesDetail;
+    var sales = new Sales();
 
     var now = new Date();
     var stamp = now / 1000 | 0;
     var code = stamp.toString(36);
 
-    payment.code = code;
-    payment.date = now;
-    payment.discount = 0;
-    payment.reference = '';
-    payment.remark = '';
+    sales.code = code;
+    sales.date = now;
+    sales.discount = 0;
+    sales.reference = '';
+    sales.remark = '';
     
-    payment.storeId = store._id;
-    payment.store = store;  
+    sales.storeId = store._id;
+    sales.store = store;  
 
-    payment.items.push(new PaymentItem({
+    sales.items.push(new SalesItem({
         articleVariantId: variant._id,
         articleVariant: variant,
         quantity: 1,
@@ -40,14 +39,13 @@ function getData() {
         total: 100000
     }));
     
-    var paymentTotal = 0;
-    for(var i of payment.items) {
-        paymentTotal += i.total;
+    var salesTotal = 0;
+    for(var i of sales.items) {
+        salesTotal += i.total;
     }
 
-    payment.paymentDetail = new PaymentDetail({
-        paymentTypeId : paymentType._id,
-        paymentType : paymentType,
+    sales.salesDetail = new SalesDetail({
+        paymentType : 'Card', //Cash, Card, Partial
         voucherId : {},
         voucher : {},
         bankId : bank._id,
@@ -58,9 +56,9 @@ function getData() {
         cardNumber : '1000200030004000',
         cardName : 'CardName',
         cashAmount : 0,
-        cardAmount : paymentTotal
+        cardAmount : salesTotal
     })
-    return payment;
+    return sales;
 }  
 
 before('#00. connect db', function(done) {
@@ -69,8 +67,8 @@ before('#00. connect db', function(done) {
             var data = require("../data");
             data(db)
                 .then(result => { 
-                    var PaymentManager = require('../../src/managers/pos/pos-payment-doc-manager');
-                    manager = new PaymentManager(db, {
+                    var SalesManager = require('../../src/managers/sales/sales-manager');
+                    manager = new SalesManager(db, {
                         username: 'unit-test'
                     });
                     testData = result; 
@@ -84,7 +82,7 @@ before('#00. connect db', function(done) {
 
 var createdId;
 var createdData;
-it('#01. should success when create new data Cash Payment Type', function(done) {
+it('#01. should success when create new data', function(done) {
     var data = getData();
     manager.create(data)
         .then(id => {
@@ -97,7 +95,7 @@ it('#01. should success when create new data Cash Payment Type', function(done) 
         });
 });
 
-it(`#02. should success when get created data with id Cash Payment Type`, function(done) {
+it(`#02. should success when get created data with id`, function(done) {
     manager.getSingleByQuery({
             _id: createdId
         })
@@ -110,7 +108,7 @@ it(`#02. should success when get created data with id Cash Payment Type`, functi
         })
 });
 
-it(`#03. should success when update created data Cash Payment Type`, function(done) {  
+it(`#03. should success when update created data`, function(done) {  
     createdData.remark += '[updated]';  
     manager.update(createdData)
         .then(id => {
@@ -122,7 +120,7 @@ it(`#03. should success when update created data Cash Payment Type`, function(do
         });
 });
 
-it(`#04. should success when get updated data with id Cash Payment Type`, function(done) {
+it(`#04. should success when get updated data with id`, function(done) {
     manager.getSingleByQuery({
             _id: createdId
         })
@@ -136,7 +134,7 @@ it(`#04. should success when get updated data with id Cash Payment Type`, functi
         })
 });
 
-it(`#05. should success when delete data Cash Payment Type`, function(done) {
+it(`#05. should success when delete data`, function(done) {
     manager.delete(createdData)
         .then(id => {
             createdId.toString().should.equal(id.toString());
@@ -147,7 +145,7 @@ it(`#05. should success when delete data Cash Payment Type`, function(done) {
         });
 });
 
-it(`#06. should _deleted=true Cash Payment Type`, function(done) {
+it(`#06. should _deleted=true`, function(done) {
     manager.getSingleByQuery({
             _id: createdId
         })
@@ -160,23 +158,3 @@ it(`#06. should _deleted=true Cash Payment Type`, function(done) {
             done(e);
         })
 });
-
-// it('#07. should error when create new data with same code Cash Payment Type', function(done) {
-//     var data = Object.assign({}, createdData);
-//     delete data._id;
-//     manager.create(data)
-//         .then(id => {
-//             id.should.be.Object();
-//             createdId = id;
-//             done("Should not be able to create data with same code Cash Payment Type");
-//         })
-//         .catch(e => {
-//             try {
-//                 e.errors.should.have.property('code');
-//                 done();
-//             }
-//             catch (xe) {
-//                 done(xe);
-//             };
-//         })
-// }); 

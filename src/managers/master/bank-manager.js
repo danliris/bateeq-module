@@ -8,14 +8,14 @@ require('mongodb-toolkit');
 var BateeqModels = require('bateeq-models');
 var map = BateeqModels.map;
 
-var RewardType = BateeqModels.promo.RewardType;
+var Bank = BateeqModels.master.Bank;
 //var generateCode = require('../../utils/code-generator');
  
-module.exports = class RewardTypeManager {
+module.exports = class BankManager {
     constructor(db, user) {
         this.db = db;
         this.user = user;
-        this.rewardTypeCollection = this.db.use(map.promo.RewardType);
+        this.bankCollection = this.db.use(map.master.Bank);
     }
 
     read(paging) {
@@ -54,13 +54,13 @@ module.exports = class RewardTypeManager {
             }
 
 
-            this.rewardTypeCollection
+            this.bankCollection
                 .where(query)
                 .page(_paging.page, _paging.size)
                 .orderBy(_paging.order, _paging.asc)
                 .execute()
-                .then(rewardTypes => {
-                    resolve(rewardTypes);
+                .then(banks => {
+                    resolve(banks);
                 })
                 .catch(e => {
                     reject(e);
@@ -77,8 +77,8 @@ module.exports = class RewardTypeManager {
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(rewardType => {
-                    resolve(rewardType);
+                .then(bank => {
+                    resolve(bank);
                 })
                 .catch(e => {
                     reject(e);
@@ -95,8 +95,8 @@ module.exports = class RewardTypeManager {
                 _deleted: false
             };
             this.getSingleOrDefaultByQuery(query)
-                .then(rewardType => {
-                    resolve(rewardType);
+                .then(bank => {
+                    resolve(bank);
                 })
                 .catch(e => {
                     reject(e);
@@ -111,8 +111,8 @@ module.exports = class RewardTypeManager {
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(rewardType => {
-                    resolve(rewardType);
+                .then(bank => {
+                    resolve(bank);
                 })
                 .catch(e => {
                     reject(e);
@@ -122,10 +122,10 @@ module.exports = class RewardTypeManager {
 
     getSingleByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.rewardTypeCollection
+            this.bankCollection
                 .single(query)
-                .then(rewardType => {
-                    resolve(rewardType);
+                .then(bank => {
+                    resolve(bank);
                 })
                 .catch(e => {
                     reject(e);
@@ -135,10 +135,10 @@ module.exports = class RewardTypeManager {
 
     getSingleOrDefaultByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.rewardTypeCollection
+            this.bankCollection
                 .singleOrDefault(query)
-                .then(rewardType => {
-                    resolve(rewardType);
+                .then(bank => {
+                    resolve(bank);
                 })
                 .catch(e => {
                     reject(e);
@@ -146,12 +146,12 @@ module.exports = class RewardTypeManager {
         })
     }
 
-    create(rewardType) {
+    create(bank) {
         return new Promise((resolve, reject) => {
-            //rewardType.code = generateCode("rewardType");
-            this._validate(rewardType)
-                .then(validRewardType => {
-                    this.rewardTypeCollection.insert(validRewardType)
+            //bank.code = generateCode("bank");
+            this._validate(bank)
+                .then(validBank => {
+                    this.bankCollection.insert(validBank)
                         .then(id => {
                             resolve(id);
                         })
@@ -165,11 +165,11 @@ module.exports = class RewardTypeManager {
         });
     }
 
-    update(rewardType) {
+    update(bank) {
         return new Promise((resolve, reject) => {
-            this._validate(rewardType)
-                .then(validRewardType => {
-                    this.rewardTypeCollection.update(validRewardType)
+            this._validate(bank)
+                .then(validBank => {
+                    this.bankCollection.update(validBank)
                         .then(id => {
                             resolve(id);
                         })
@@ -183,12 +183,12 @@ module.exports = class RewardTypeManager {
         });
     }
 
-    delete(rewardType) {
+    delete(bank) {
         return new Promise((resolve, reject) => {
-            this._validate(rewardType)
-                .then(validRewardType => {
-                    validRewardType._deleted = true;
-                    this.rewardTypeCollection.update(validRewardType)
+            this._validate(bank)
+                .then(validBank => {
+                    validBank._deleted = true;
+                    this.bankCollection.update(validBank)
                         .then(id => {
                             resolve(id);
                         })
@@ -202,12 +202,12 @@ module.exports = class RewardTypeManager {
         });
     }
  
-    _validate(rewardType) {
+    _validate(bank) {
         var errors = {};
         return new Promise((resolve, reject) => {
-            var valid = new RewardType(rewardType);
+            var valid = new Bank(bank);
             // 1. begin: Declare promises.
-            var getRewardType = this.rewardTypeCollection.singleOrDefault({
+            var getBank = this.bankCollection.singleOrDefault({
                 "$and": [{
                     _id: {
                         '$ne': new ObjectId(valid._id)
@@ -219,13 +219,13 @@ module.exports = class RewardTypeManager {
             // 1. end: Declare promises.
 
             // 2. begin: Validation.
-            Promise.all([getRewardType])
+            Promise.all([getBank])
                 .then(results => {
-                    var _rewardType = results[0];
+                    var _bank = results[0];
 
                     if (!valid.code || valid.code == '')
                         errors["code"] = "code is required";
-                    else if (_rewardType) {
+                    else if (_bank) {
                         errors["code"] = "code already exists";
                     }
 

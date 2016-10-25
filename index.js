@@ -1,6 +1,5 @@
 var inventoryMap = new Map();
 inventoryMap.set("storage", require('./src/managers/inventory/storage-manager'));
-inventoryMap.set("store", require('./src/managers/inventory/store-manager'));
 inventoryMap.set("transfer-in-doc", require('./src/managers/inventory/transfer-in-doc-manager'));
 inventoryMap.set("transfer-out-doc", require('./src/managers/inventory/transfer-out-doc-manager'));
 inventoryMap.set("inventory", require('./src/managers/inventory/inventory-manager'));
@@ -86,17 +85,15 @@ module.exports = {
         SPKBarangJadiReturManager: require('./src/managers/merchandiser/efr-pk-pbr-manager'),
         map: merchandiserMap
     },
-    posmaster: {
-        BankManager: require('./src/managers/pos-master/bank-manager'),
-        CardTypeManager: require('./src/managers/pos-master/card-type-manager'),
-        PaymentTypeManager: require('./src/managers/pos-master/payment-type-manager')
+    master: {
+        BankManager: require('./src/managers/master/bank-manager'),
+        CardTypeManager: require('./src/managers/master/card-type-manager'),
+        StoreManager: require('./src/managers/master/store-manager')
     },
-    pos: {
-        PaymentManager: require('./src/managers/pos/pos-payment-doc-manager')
-    },
-    promo: {
-        PromoManager: require('./src/managers/promo/promo-doc-manager'),
-        RewardTypeManager: require('./src/managers/promo/reward-type-manager')
+    sales: {
+        SalesManager: require('./src/managers/sales/sales-manager'),
+        PromoManager: require('./src/managers/sales/promo-manager'),
+        RewardTypeManager: require('./src/managers/sales/reward-type-manager')
     },
     ValidationError: require('./src/validation-error')
 }

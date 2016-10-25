@@ -8,14 +8,14 @@ require('mongodb-toolkit');
 var BateeqModels = require('bateeq-models');
 var map = BateeqModels.map;
 
-var CardType = BateeqModels.posmaster.CardType;
+var Promo = BateeqModels.sales.Promo;
 //var generateCode = require('../../utils/code-generator');
  
-module.exports = class CardTypeManager {
+module.exports = class PromoManager {
     constructor(db, user) {
         this.db = db;
         this.user = user;
-        this.cardTypeCollection = this.db.use(map.posmaster.CardType);
+        this.promoCollection = this.db.use(map.sales.PromoDoc);
     }
 
     read(paging) {
@@ -54,13 +54,13 @@ module.exports = class CardTypeManager {
             }
 
 
-            this.cardTypeCollection
+            this.promoCollection
                 .where(query)
                 .page(_paging.page, _paging.size)
                 .orderBy(_paging.order, _paging.asc)
                 .execute()
-                .then(cardTypes => {
-                    resolve(cardTypes);
+                .then(promoes => {
+                    resolve(promoes);
                 })
                 .catch(e => {
                     reject(e);
@@ -77,8 +77,8 @@ module.exports = class CardTypeManager {
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(cardType => {
-                    resolve(cardType);
+                .then(promo => {
+                    resolve(promo);
                 })
                 .catch(e => {
                     reject(e);
@@ -95,8 +95,8 @@ module.exports = class CardTypeManager {
                 _deleted: false
             };
             this.getSingleOrDefaultByQuery(query)
-                .then(cardType => {
-                    resolve(cardType);
+                .then(promoes => {
+                    resolve(promoes);
                 })
                 .catch(e => {
                     reject(e);
@@ -104,15 +104,34 @@ module.exports = class CardTypeManager {
         });
     }
 
-     getByCode(code) {
+    getByCode(code) {
         return new Promise((resolve, reject) => {
             var query = {
                 code: code,
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(cardType => {
-                    resolve(cardType);
+                .then(promo => {
+                    resolve(promo);
+                })
+                .catch(e => {
+                    reject(e);
+                });
+        });
+    }
+    
+    getByStoreVariantDatetime(storeId, variantId, datetime) {
+        return new Promise((resolve, reject) => {
+            var query = {
+                stores: {'$elemMatch': { _id: new ObjectId(storeId)}},
+                promoProducts: {'$elemMatch': { articleVariantId: new ObjectId(variantId)}},
+                validDateFrom: {'$lte': new Date(datetime)},
+                validDateTo: {'$gte': new Date(datetime)},
+                _deleted: false
+            };
+            this.getFirstOrDefaultByQuery(query)
+                .then(promo => {
+                    resolve(promo);
                 })
                 .catch(e => {
                     reject(e);
@@ -122,10 +141,10 @@ module.exports = class CardTypeManager {
 
     getSingleByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.cardTypeCollection
+            this.promoCollection
                 .single(query)
-                .then(cardType => {
-                    resolve(cardType);
+                .then(promo => {
+                    resolve(promo);
                 })
                 .catch(e => {
                     reject(e);
@@ -135,10 +154,23 @@ module.exports = class CardTypeManager {
 
     getSingleOrDefaultByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.cardTypeCollection
+            this.promoCollection
                 .singleOrDefault(query)
-                .then(cardType => {
-                    resolve(cardType);
+                .then(promo => {
+                    resolve(promo);
+                })
+                .catch(e => {
+                    reject(e);
+                });
+        })
+    }
+    
+    getFirstOrDefaultByQuery(query) {
+        return new Promise((resolve, reject) => {
+            this.promoCollection
+                .firstOrDefault(query)
+                .then(promo => {
+                    resolve(promo);
                 })
                 .catch(e => {
                     reject(e);
@@ -146,12 +178,12 @@ module.exports = class CardTypeManager {
         })
     }
 
-    create(cardType) {
+    create(promo) {
         return new Promise((resolve, reject) => {
-            //cardType.code = generateCode("cardType");
-            this._validate(cardType)
-                .then(validCardType => {
-                    this.cardTypeCollection.insert(validCardType)
+            //promo.code = generateCode("promo");
+            this._validate(promo)
+                .then(validPromo => {
+                    this.promoCollection.insert(validPromo)
                         .then(id => {
                             resolve(id);
                         })
@@ -165,11 +197,11 @@ module.exports = class CardTypeManager {
         });
     }
 
-    update(cardType) {
+    update(promo) {
         return new Promise((resolve, reject) => {
-            this._validate(cardType)
-                .then(validCardType => {
-                    this.cardTypeCollection.update(validCardType)
+            this._validate(promo)
+                .then(validPromo => {
+                    this.promoCollection.update(validPromo)
                         .then(id => {
                             resolve(id);
                         })
@@ -183,12 +215,12 @@ module.exports = class CardTypeManager {
         });
     }
 
-    delete(cardType) {
+    delete(promo) {
         return new Promise((resolve, reject) => {
-            this._validate(cardType)
-                .then(validCardType => {
-                    validCardType._deleted = true;
-                    this.cardTypeCollection.update(validCardType)
+            this._validate(promo)
+                .then(validPromo => {
+                    validPromo._deleted = true;
+                    this.promoCollection.update(validPromo)
                         .then(id => {
                             resolve(id);
                         })
@@ -202,12 +234,12 @@ module.exports = class CardTypeManager {
         });
     }
  
-    _validate(cardType) {
+    _validate(promo) {
         var errors = {};
         return new Promise((resolve, reject) => {
-            var valid = new CardType(cardType);
+            var valid = new Promo(promo);
             // 1. begin: Declare promises.
-            var getCardType = this.cardTypeCollection.singleOrDefault({
+            var getPromo = this.promoCollection.singleOrDefault({
                 "$and": [{
                     _id: {
                         '$ne': new ObjectId(valid._id)
@@ -219,13 +251,13 @@ module.exports = class CardTypeManager {
             // 1. end: Declare promises.
 
             // 2. begin: Validation.
-            Promise.all([getCardType])
+            Promise.all([getPromo])
                 .then(results => {
-                    var _cardType = results[0];
+                    var _promo = results[0];
 
                     if (!valid.code || valid.code == '')
                         errors["code"] = "code is required";
-                    else if (_cardType) {
+                    else if (_promo) {
                         errors["code"] = "code already exists";
                     }
 

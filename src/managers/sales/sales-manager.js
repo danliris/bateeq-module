@@ -8,32 +8,29 @@ require('mongodb-toolkit');
 var BateeqModels = require('bateeq-models');
 var map = BateeqModels.map;
 
-var Payment = BateeqModels.pos.Payment; 
+var Sales = BateeqModels.sales.Sales; 
 var TransferOutDoc = BateeqModels.inventory.TransferOutDoc;
 var generateCode = require('../../utils/code-generator');
 
 
-module.exports = class PaymentManager {
+module.exports = class SalesManager {
     constructor(db, user) {
         this.db = db;
         this.user = user;
-        this.paymentCollection = this.db.use(map.pos.PaymentDoc);
+        this.salesCollection = this.db.use(map.sales.SalesDoc);
         
         var ArticleVariantManager = require('../core/article/article-variant-manager');
         this.articleVariantManager = new ArticleVariantManager(db, user);
         
-        var StoreManager = require('../inventory/store-manager');
+        var StoreManager = require('../master/store-manager');
         this.storeManager = new StoreManager(db, user); 
         
-        var BankManager = require('../pos-master/bank-manager');
+        var BankManager = require('../master/bank-manager');
         this.bankManager = new BankManager(db, user);  
         
-        var CardTypeManager = require('../pos-master/card-type-manager');
+        var CardTypeManager = require('../master/card-type-manager');
         this.cardTypeManager = new CardTypeManager(db, user);  
-        
-        var PaymentTypeManager = require('../pos-master/payment-type-manager');
-        this.paymentTypeManager = new PaymentTypeManager(db, user);  
-        
+                
         var TransferOutDocManager = require('../inventory/transfer-out-doc-manager');
         this.transferOutDocManager = new TransferOutDocManager(db, user);
         
@@ -72,13 +69,13 @@ module.exports = class PaymentManager {
             }
 
 
-            this.paymentCollection
+            this.salesCollection
                 .where(query)
                 .page(_paging.page, _paging.size)
                 .orderBy(_paging.order, _paging.asc)
                 .execute()
-                .then(payments => {
-                    resolve(payments);
+                .then(sales => {
+                    resolve(sales);
                 })
                 .catch(e => {
                     reject(e);
@@ -95,8 +92,8 @@ module.exports = class PaymentManager {
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(payment => {
-                    resolve(payment);
+                .then(sales => {
+                    resolve(sales);
                 })
                 .catch(e => {
                     reject(e);
@@ -113,8 +110,8 @@ module.exports = class PaymentManager {
                 _deleted: false
             };
             this.getSingleOrDefaultByQuery(query)
-                .then(payment => {
-                    resolve(payment);
+                .then(sales => {
+                    resolve(sales);
                 })
                 .catch(e => {
                     reject(e);
@@ -129,8 +126,8 @@ module.exports = class PaymentManager {
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(payment => {
-                    resolve(payment);
+                .then(sales => {
+                    resolve(sales);
                 })
                 .catch(e => {
                     reject(e);
@@ -140,10 +137,10 @@ module.exports = class PaymentManager {
 
     getSingleByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.paymentCollection
+            this.salesCollection
                 .single(query)
-                .then(payment => {
-                    resolve(payment);
+                .then(sales => {
+                    resolve(sales);
                 })
                 .catch(e => {
                     reject(e);
@@ -153,10 +150,10 @@ module.exports = class PaymentManager {
 
     getSingleOrDefaultByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.paymentCollection
+            this.salesCollection
                 .singleOrDefault(query)
-                .then(payment => {
-                    resolve(payment);
+                .then(sales => {
+                    resolve(sales);
                 })
                 .catch(e => {
                     reject(e);
@@ -164,18 +161,18 @@ module.exports = class PaymentManager {
         })
     }
 
-    create(payment) {
+    create(sales) {
         return new Promise((resolve, reject) => {
-            payment.code = generateCode("payment");
-            this._validate(payment)
-                .then(validPayment => {   
+            sales.code = generateCode("sales");
+            this._validate(sales)
+                .then(validSales => {   
                     var validTransferOutDoc = {};
-                    validTransferOutDoc.code = generateCode("payment");
-                    validTransferOutDoc.reference = validPayment.code;
-                    validTransferOutDoc.sourceId = validPayment.store.storageId;
-                    validTransferOutDoc.destinationId = validPayment.store.storageId;
+                    validTransferOutDoc.code = generateCode("sales");
+                    validTransferOutDoc.reference = validSales.code;
+                    validTransferOutDoc.sourceId = validSales.store.storageId;
+                    validTransferOutDoc.destinationId = validSales.store.storageId;
                     validTransferOutDoc.items = [];
-                    for (var item of validPayment.items) {
+                    for (var item of validSales.items) {
                         var newitem = {};
                         newitem.articleVariantId = item.articleVariantId;
                         newitem.quantity = item.quantity;
@@ -185,7 +182,7 @@ module.exports = class PaymentManager {
                     
                     var createData = [];
                     createData.push(this.transferOutDocManager.create(validTransferOutDoc));
-                    createData.push(this.paymentCollection.insert(validPayment));
+                    createData.push(this.salesCollection.insert(validSales));
                     
                     Promise.all(createData)
                         .then(results => {
@@ -201,11 +198,11 @@ module.exports = class PaymentManager {
         });
     }
 
-    update(payment) {
+    update(sales) {
         return new Promise((resolve, reject) => {
-            this._validate(payment)
-                .then(validPayment => {
-                    this.paymentCollection.update(validPayment)
+            this._validate(sales)
+                .then(validSales => {
+                    this.salesCollection.update(validSales)
                         .then(id => {
                             resolve(id);
                         })
@@ -219,12 +216,12 @@ module.exports = class PaymentManager {
         });
     }
 
-    delete(payment) {
+    delete(sales) {
         return new Promise((resolve, reject) => {
-            this._validate(payment)
-                .then(validPayment => {
-                    validPayment._deleted = true;
-                    this.paymentCollection.update(validPayment)
+            this._validate(sales)
+                .then(validSales => {
+                    validSales._deleted = true;
+                    this.salesCollection.update(validSales)
                         .then(id => {
                             resolve(id);
                         })
@@ -238,27 +235,27 @@ module.exports = class PaymentManager {
         });
     }
  
-    _validate(payment) {
+    _validate(sales) {
         var errors = {};
         return new Promise((resolve, reject) => {
-            var valid = new Payment(payment); 
+            var valid = new Sales(sales); 
             
-            var paymentDetailError = {};
+            var salesDetailError = {};
             if (!valid.code || valid.code == '')
                 errors["code"] = "code is required";
-            if (!payment.storeId || payment.storeId == '')
+            if (!sales.storeId || sales.storeId == '')
                 errors["storeId"] = "storeId is required"; 
-            if (!payment.paymentDetail.paymentTypeId || payment.paymentDetail.paymentTypeId == '')
-                paymentDetailError["paymentTypeId"] = "paymentTypeId is required";
+            if (!sales.salesDetail.paymentType || sales.salesDetail.paymentType == '')
+                salesDetailError["paymentType"] = "paymentType is required";
             
-            for (var prop in paymentDetailError) {
-                errors["paymentDetail"] = paymentDetailError;
+            for (var prop in salesDetailError) {
+                errors["salesDetail"] = salesDetailError;
                 break;
             }
                                 
 
-            //Get Payment data
-            var getPayment = this.paymentCollection.singleOrDefault({
+            //Get sales data
+            var getSales = this.salesCollection.singleOrDefault({
                 "$and": [{
                     _id: {
                         '$ne': new ObjectId(valid._id)
@@ -267,10 +264,9 @@ module.exports = class PaymentManager {
                         code: valid.code
                     }]
             });  
-            var getStore = this.storeManager.getByIdOrDefault(payment.storeId);
-            var getBank = this.bankManager.getByIdOrDefault(payment.paymentDetail.bankId);
-            var getCardType = this.cardTypeManager.getByIdOrDefault(payment.paymentDetail.cardTypeId);
-            var getPaymentType = this.paymentTypeManager.getByIdOrDefault(payment.paymentDetail.paymentTypeId);
+            var getStore = this.storeManager.getByIdOrDefault(sales.storeId);
+            var getBank = this.bankManager.getByIdOrDefault(sales.salesDetail.bankId);
+            var getCardType = this.cardTypeManager.getByIdOrDefault(sales.salesDetail.cardTypeId);
             var getVoucher = Promise.resolve(null);
             var getItems = [];
             if (valid.items && valid.items.length > 0) {
@@ -282,17 +278,16 @@ module.exports = class PaymentManager {
                 errors["items"] = "items is required";
             }
             
-            Promise.all([getPayment, getStore, getBank, getCardType, getPaymentType, getVoucher].concat(getItems))
+            Promise.all([getSales, getStore, getBank, getCardType, getVoucher].concat(getItems))
                .then(results => {
-                    var _payment = results[0];
+                    var _sales = results[0];
                     var _store = results[1];
                     var _bank = results[2];
                     var _cardType = results[3];
-                    var _paymentType = results[4];
-                    var _voucherType = results[5];
-                    var articleVariants = results.slice(6, results.length) 
+                    var _voucherType = results[4];
+                    var articleVariants = results.slice(5, results.length) 
                      
-                    if (_payment) {
+                    if (_sales) {
                         errors["code"] = "code already exists";
                     }  
                     
@@ -414,85 +409,82 @@ module.exports = class PaymentManager {
                         }
                     } 
                     
-                    if (!_paymentType) {
-                        paymentDetailError["paymentTypeId"] = "paymentTypeId not found";
+                    if (valid.salesDetail.paymentType.toLowerCase() != "card" && valid.salesDetail.paymentType.toLowerCase() != "cash" && valid.salesDetail.paymentType.toLowerCase() != "partial") {
+                        salesDetailError["paymentType"] = "paymentType not valid";
                     }
-                    else {
-                        valid.paymentDetail.paymentTypeId = _paymentType._id;
-                        valid.paymentDetail.paymentType = _paymentType;
-                        
-                        if(_paymentType.name.toLowerCase() == "card" || _paymentType.name.toLowerCase() == "partial"){
-                            if (!payment.paymentDetail.bankId || payment.paymentDetail.bankId == '')
-                                paymentDetailError["bankId"] = "bankId is required";
+                    else {                        
+                        if(valid.salesDetail.paymentType.toLowerCase() == "card" || valid.salesDetail.paymentType.toLowerCase() == "partial"){
+                            if (!sales.salesDetail.bankId || sales.salesDetail.bankId == '')
+                                salesDetailError["bankId"] = "bankId is required";
                             if (!_bank) {
-                                paymentDetailError["bankId"] = "bankId not found";
+                                salesDetailError["bankId"] = "bankId not found";
                             }
                             else {
-                                valid.paymentDetail.bankId = _bank._id;
-                                valid.paymentDetail.bank = _bank;
+                                valid.salesDetail.bankId = _bank._id;
+                                valid.salesDetail.bank = _bank;
                             } 
                             
-                            if (!valid.paymentDetail.card || valid.paymentDetail.card == '')
-                                paymentDetailError["card"] = "card is required";
+                            if (!valid.salesDetail.card || valid.salesDetail.card == '')
+                                salesDetailError["card"] = "card is required";
                             else {
-                                if(valid.paymentDetail.card.toLowerCase() != 'debit' && valid.paymentDetail.card.toLowerCase() != 'credit')
-                                    paymentDetailError["card"] = "card must be debit or credit"; 
+                                if(valid.salesDetail.card.toLowerCase() != 'debit' && valid.salesDetail.card.toLowerCase() != 'credit')
+                                    salesDetailError["card"] = "card must be debit or credit"; 
                                 else { 
-                                    if(valid.paymentDetail.card.toLowerCase() != 'debit')
+                                    if(valid.salesDetail.card.toLowerCase() != 'debit')
                                     {
-                                        if (!payment.paymentDetail.cardTypeId || payment.paymentDetail.cardTypeId == '')
-                                            paymentDetailError["cardTypeId"] = "cardTypeId is required"; 
+                                        if (!sales.salesDetail.cardTypeId || sales.salesDetail.cardTypeId == '')
+                                            salesDetailError["cardTypeId"] = "cardTypeId is required"; 
                                         if (!_cardType) {
-                                            paymentDetailError["cardTypeId"] = "cardTypeId not found";
+                                            salesDetailError["cardTypeId"] = "cardTypeId not found";
                                         }
                                         else {
-                                            valid.paymentDetail.cardTypeId = _cardType._id;
-                                            valid.paymentDetail.cardType = _cardType;
+                                            valid.salesDetail.cardTypeId = _cardType._id;
+                                            valid.salesDetail.cardType = _cardType;
                                         }   
                                     }
                                 }
                             }
                                 
-                            if (!valid.paymentDetail.cardNumber || valid.paymentDetail.cardNumber == '')
-                                paymentDetailError["cardNumber"] = "cardNumber is required";
+                            if (!valid.salesDetail.cardNumber || valid.salesDetail.cardNumber == '')
+                                salesDetailError["cardNumber"] = "cardNumber is required";
                                 
-                            if (!valid.paymentDetail.cardName || valid.paymentDetail.cardName == '')
-                                paymentDetailError["cardName"] = "cardName is required"; 
+                            if (!valid.salesDetail.cardName || valid.salesDetail.cardName == '')
+                                salesDetailError["cardName"] = "cardName is required"; 
                                 
-                            if (valid.paymentDetail.cardAmount == undefined || (valid.paymentDetail.cardAmount && valid.paymentDetail.cardAmount == '')) {
-                                paymentDetailError["cardAmount"] = "cardAmount is required";
-                                valid.paymentDetail.cardAmount = 0;
+                            if (valid.salesDetail.cardAmount == undefined || (valid.salesDetail.cardAmount && valid.salesDetail.cardAmount == '')) {
+                                salesDetailError["cardAmount"] = "cardAmount is required";
+                                valid.salesDetail.cardAmount = 0;
                             } 
-                            else if(parseInt(valid.paymentDetail.cardAmount) <= 0) {
-                                paymentDetailError["cardAmount"] = "cardAmount must be greater than 0";
+                            else if(parseInt(valid.salesDetail.cardAmount) <= 0) {
+                                salesDetailError["cardAmount"] = "cardAmount must be greater than 0";
                             }  
                         }  
                         
-                        if(_paymentType.name.toLowerCase() == "cash" || _paymentType.name.toLowerCase() == "partial"){ 
-                            if (valid.paymentDetail.cashAmount == undefined || (valid.paymentDetail.cashAmount && valid.paymentDetail.cashAmount == '')) {
-                                paymentDetailError["cashAmount"] = "cashAmount is required";
-                                valid.paymentDetail.cashAmount = 0;
+                        if(valid.salesDetail.paymentType.toLowerCase() == "cash" || valid.salesDetail.paymentType.toLowerCase() == "partial"){ 
+                            if (valid.salesDetail.cashAmount == undefined || (valid.salesDetail.cashAmount && valid.salesDetail.cashAmount == '')) {
+                                salesDetailError["cashAmount"] = "cashAmount is required";
+                                valid.salesDetail.cashAmount = 0;
                             } 
-                            else if(parseInt(valid.paymentDetail.cashAmount) <= 0) {
-                                paymentDetailError["cashAmount"] = "cashAmount must be greater than 0";
+                            else if(parseInt(valid.salesDetail.cashAmount) <= 0) {
+                                salesDetailError["cashAmount"] = "cashAmount must be greater than 0";
                             } 
                         } 
                         
-                        if(_paymentType.name.toLowerCase() == "partial")
-                            if((parseInt(valid.paymentDetail.cashAmount) + parseInt(valid.paymentDetail.cardAmount)) < parseInt(valid.grandTotal))
+                        if(valid.salesDetail.paymentType.toLowerCase() == "partial")
+                            if((parseInt(valid.salesDetail.cashAmount) + parseInt(valid.salesDetail.cardAmount)) < parseInt(valid.grandTotal))
                                 errors["grandTotal"] = "grandTotal is bigger than payment";  
                                 
-                        if(_paymentType.name.toLowerCase() == "card")
-                            if(parseInt(valid.paymentDetail.cardAmount) < parseInt(valid.grandTotal))
+                        if(valid.salesDetail.paymentType.toLowerCase() == "card")
+                            if(parseInt(valid.salesDetail.cardAmount) < parseInt(valid.grandTotal))
                                 errors["grandTotal"] = "grandTotal is bigger than payment";  
                                 
-                        if(_paymentType.name.toLowerCase() == "cash")
-                            if(parseInt(valid.paymentDetail.cashAmount) < parseInt(valid.grandTotal))
+                        if(valid.salesDetail.paymentType.toLowerCase() == "cash")
+                            if(parseInt(valid.salesDetail.cashAmount) < parseInt(valid.grandTotal))
                                 errors["grandTotal"] = "grandTotal is bigger than payment";  
                     } 
                     
-                    for (var prop in paymentDetailError) {
-                        errors["paymentDetail"] = paymentDetailError;
+                    for (var prop in salesDetailError) {
+                        errors["salesDetail"] = salesDetailError;
                         break;
                     }
             
@@ -501,7 +493,7 @@ module.exports = class PaymentManager {
                         reject(new ValidationError('data does not pass validation', errors));
                     }
 
-                    // valid = new Payment(valid);
+                    // valid = new Sales(valid);
                     // valid.stamp(this.user.username, 'manager');
                     // resolve(valid);
 
@@ -536,7 +528,7 @@ module.exports = class PaymentManager {
                                 reject(new ValidationError('data does not pass validation', errors));
                             }
                     
-                            valid = new Payment(valid);
+                            valid = new Sales(valid);
                             valid.stamp(this.user.username, 'manager');
                             resolve(valid);
                         })

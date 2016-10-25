@@ -519,7 +519,7 @@ function getSertStores(db, storages) {
     }];
 
 
-    var StoreManager = require("../src/managers/inventory/store-manager");
+    var StoreManager = require("../src/managers/master/store-manager");
     return new Promise((resolve, reject) => {
         var manager = new StoreManager(db, {
             username: "unit-test"
@@ -581,7 +581,7 @@ function getSertBanks(db) {
     }];
 
 
-    var BankManager = require("../src/managers/pos-master/bank-manager");
+    var BankManager = require("../src/managers/master/bank-manager");
     return new Promise((resolve, reject) => {
         var manager = new BankManager(db, {
             username: "unit-test"
@@ -643,7 +643,7 @@ function getSertCardTypes(db) {
     }];
 
 
-    var CardTypeManager = require("../src/managers/pos-master/card-type-manager");
+    var CardTypeManager = require("../src/managers/master/card-type-manager");
     return new Promise((resolve, reject) => {
         var manager = new CardTypeManager(db, {
             username: "unit-test"
@@ -688,68 +688,6 @@ function getSertCardTypes(db) {
     });
 }
 
-function getSertPaymentTypes(db) {
-
-    var paymentTypes = [{
-        code: "PA-CASH",
-        name: "Cash",
-        description: "Unit test data: Cash payment type."
-    }, {
-        code: "PA-CARD",
-        name: "Card",
-        description: "Unit test data: Card payment type."
-    }, {
-        code: "PA-PARTIAL",
-        name: "Partial",
-        description: "Unit test data: Partial payment type."
-    }];
-
-
-    var PaymentTypeManager = require("../src/managers/pos-master/payment-type-manager");
-    return new Promise((resolve, reject) => {
-        var manager = new PaymentTypeManager(db, {
-            username: "unit-test"
-        });
-        var promises = [];
-
-        for (var paymentType of paymentTypes) {
-            var promise = new Promise((resolve, reject) => {
-                var _paymentType = paymentType;
-                manager.getSingleOrDefaultByQuery({
-                        code: _paymentType.code
-                    })
-                    .then(data => {
-                        if (data)
-                            resolve(data);
-                        else {
-                            manager.create(_paymentType)
-                                .then(id => {
-                                    manager.getById(id).then(createdData => {
-                                        resolve(createdData);
-                                    });
-                                })
-                                .catch(e => {
-                                    reject(e);
-                                });
-                        }
-                    })
-                    .catch(e => {
-                        reject(e);
-                    });
-            });
-            promises.push(promise);
-        }
-
-        Promise.all(promises)
-            .then(paymentTypes => {
-                resolve(paymentTypes);
-            })
-            .catch(e => {
-                reject(e);
-            });
-    });
-}
-
 function getSertRewardTypes(db) {
 
     var rewardTypes = [{
@@ -775,7 +713,7 @@ function getSertRewardTypes(db) {
     }];
 
 
-    var RewardTypeManager = require("../src/managers/promo/reward-type-manager");
+    var RewardTypeManager = require("../src/managers/sales/reward-type-manager");
     return new Promise((resolve, reject) => {
         var manager = new RewardTypeManager(db, {
             username: "unit-test"
@@ -822,14 +760,13 @@ function getSertRewardTypes(db) {
 
 module.exports = function(db) {
     return new Promise((resolve, reject) => {
-        Promise.all([getSertStorages(db), getSertVariants(db), getSertSuppliers(db), getSertBanks(db), getSertCardTypes(db), getSertPaymentTypes(db), getSertRewardTypes(db)])
+        Promise.all([getSertStorages(db), getSertVariants(db), getSertSuppliers(db), getSertBanks(db), getSertCardTypes(db), getSertRewardTypes(db)])
             .then(results => {
                 var storages = {};
                 var variants = {};
                 var suppliers = {}; 
                 var banks = {};
                 var cardTypes = {};
-                var paymentTypes = {};
                 var rewardTypes = {};
 
                 for (var storage of results[0])
@@ -847,10 +784,7 @@ module.exports = function(db) {
                 for (var cardType of results[4])
                     cardTypes[cardType.code] = cardType;
                     
-                for (var paymentType of results[5])
-                    paymentTypes[paymentType.code] = paymentType;
-
-                for (var rewardType of results[6])
+                for (var rewardType of results[5])
                     rewardTypes[rewardType.code] = rewardType;
 
                 Promise.all([getSertModules(db, storages), getSertStores(db, storages)])
@@ -871,7 +805,6 @@ module.exports = function(db) {
                             stores : stores,
                             banks : banks,
                             cardTypes : cardTypes,
-                            paymentTypes : paymentTypes,
                             rewardTypes : rewardTypes,
                             modules: modules
                         });

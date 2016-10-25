@@ -1,10 +1,10 @@
 var should = require('should');
 var helper = require('../helper');
-var validate = require('bateeq-models').validator.posmaster;
+var validate = require('bateeq-models').validator.master;
 var manager;
 
 function getData() {
-    var Bank = require('bateeq-models').posmaster.Bank;
+    var Bank = require('bateeq-models').master.Bank;
     var bank = new Bank();
 
     var now = new Date();
@@ -21,7 +21,7 @@ function getData() {
 before('#00. connect db', function(done) {
     helper.getDb()
         .then(db => {
-            var BankManager = require('../../src/managers/pos-master/bank-manager');
+            var BankManager = require('../../src/managers/master/bank-manager');
             manager = new BankManager(db, {
                 username: 'unit-test'
             });

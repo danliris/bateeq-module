@@ -1,6 +1,6 @@
 var should = require('should');
 var helper = require('../helper');
-var validate = require('bateeq-models').validator.promo;
+var validate = require('bateeq-models').validator.sales;
 var manager;
 var testData;
 
@@ -12,9 +12,9 @@ function getData() {
     stores.push(testData.stores["ST-BJB"]);
     stores.push(testData.stores["ST-BJR"]);
 
-    var Promo = require('bateeq-models').promo.Promo;
-    var PromoProduct = require('bateeq-models').promo.PromoProduct;
-    var PromoDiscount = require('bateeq-models').promo.PromoDiscount;
+    var Promo = require('bateeq-models').sales.Promo;
+    var PromoProduct = require('bateeq-models').sales.PromoProduct;
+    var PromoDiscount = require('bateeq-models').sales.PromoDiscount;
     var promo = new Promo();
 
     var now = new Date();
@@ -54,7 +54,7 @@ before('#00. connect db', function(done) {
             var data = require("../data");
             data(db)
                 .then(result => { 
-                    var PromoManager = require('../../src/managers/promo/promo-doc-manager');
+                    var PromoManager = require('../../src/managers/sales/promo-manager');
                     manager = new PromoManager(db, {
                         username: 'unit-test'
                     });

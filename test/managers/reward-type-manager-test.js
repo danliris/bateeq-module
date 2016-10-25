@@ -1,10 +1,10 @@
 var should = require('should');
 var helper = require('../helper');
-var validate = require('bateeq-models').validator.promo;
+var validate = require('bateeq-models').validator.sales;
 var manager;
 
 function getData() {
-    var RewardType = require('bateeq-models').promo.RewardType;
+    var RewardType = require('bateeq-models').sales.RewardType;
     var rewardType = new RewardType();
 
     var now = new Date();
@@ -21,7 +21,7 @@ function getData() {
 before('#00. connect db', function(done) {
     helper.getDb()
         .then(db => {
-            var RewardTypeManager = require('../../src/managers/promo/reward-type-manager');
+            var RewardTypeManager = require('../../src/managers/sales/reward-type-manager');
             manager = new RewardTypeManager(db, {
                 username: 'unit-test'
             });

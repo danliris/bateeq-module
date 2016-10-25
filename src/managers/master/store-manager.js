@@ -8,14 +8,14 @@ require('mongodb-toolkit');
 var BateeqModels = require('bateeq-models');
 var map = BateeqModels.map;
 
-var PaymentType = BateeqModels.posmaster.PaymentType;
+var Store = BateeqModels.master.Store;
 //var generateCode = require('../../utils/code-generator');
  
-module.exports = class PaymentTypeManager {
+module.exports = class StoreManager {
     constructor(db, user) {
         this.db = db;
         this.user = user;
-        this.paymentTypeCollection = this.db.use(map.posmaster.PaymentType);
+        this.storeCollection = this.db.use(map.master.Store);
     }
 
     read(paging) {
@@ -54,13 +54,13 @@ module.exports = class PaymentTypeManager {
             }
 
 
-            this.paymentTypeCollection
+            this.storeCollection
                 .where(query)
                 .page(_paging.page, _paging.size)
                 .orderBy(_paging.order, _paging.asc)
                 .execute()
-                .then(paymentTypes => {
-                    resolve(paymentTypes);
+                .then(stores => {
+                    resolve(stores);
                 })
                 .catch(e => {
                     reject(e);
@@ -77,8 +77,8 @@ module.exports = class PaymentTypeManager {
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(paymentType => {
-                    resolve(paymentType);
+                .then(store => {
+                    resolve(store);
                 })
                 .catch(e => {
                     reject(e);
@@ -95,8 +95,8 @@ module.exports = class PaymentTypeManager {
                 _deleted: false
             };
             this.getSingleOrDefaultByQuery(query)
-                .then(paymentType => {
-                    resolve(paymentType);
+                .then(store => {
+                    resolve(store);
                 })
                 .catch(e => {
                     reject(e);
@@ -111,8 +111,8 @@ module.exports = class PaymentTypeManager {
                 _deleted: false
             };
             this.getSingleByQuery(query)
-                .then(paymentType => {
-                    resolve(paymentType);
+                .then(store => {
+                    resolve(store);
                 })
                 .catch(e => {
                     reject(e);
@@ -122,10 +122,10 @@ module.exports = class PaymentTypeManager {
 
     getSingleByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.paymentTypeCollection
+            this.storeCollection
                 .single(query)
-                .then(paymentType => {
-                    resolve(paymentType);
+                .then(store => {
+                    resolve(store);
                 })
                 .catch(e => {
                     reject(e);
@@ -135,10 +135,10 @@ module.exports = class PaymentTypeManager {
 
     getSingleOrDefaultByQuery(query) {
         return new Promise((resolve, reject) => {
-            this.paymentTypeCollection
+            this.storeCollection
                 .singleOrDefault(query)
-                .then(paymentType => {
-                    resolve(paymentType);
+                .then(store => {
+                    resolve(store);
                 })
                 .catch(e => {
                     reject(e);
@@ -146,12 +146,12 @@ module.exports = class PaymentTypeManager {
         })
     }
 
-    create(paymentType) {
+    create(store) {
         return new Promise((resolve, reject) => {
-            //paymentType.code = generateCode("paymentType");
-            this._validate(paymentType)
-                .then(validPaymentType => {
-                    this.paymentTypeCollection.insert(validPaymentType)
+            //store.code = generateCode("store");
+            this._validate(store)
+                .then(validStore => { 
+                    this.storeCollection.insert(validStore)
                         .then(id => {
                             resolve(id);
                         })
@@ -165,11 +165,11 @@ module.exports = class PaymentTypeManager {
         });
     }
 
-    update(paymentType) {
+    update(store) {
         return new Promise((resolve, reject) => {
-            this._validate(paymentType)
-                .then(validPaymentType => {
-                    this.paymentTypeCollection.update(validPaymentType)
+            this._validate(store)
+                .then(validStore => {
+                    this.storeCollection.update(validStore)
                         .then(id => {
                             resolve(id);
                         })
@@ -183,12 +183,12 @@ module.exports = class PaymentTypeManager {
         });
     }
 
-    delete(paymentType) {
+    delete(store) {
         return new Promise((resolve, reject) => {
-            this._validate(paymentType)
-                .then(validPaymentType => {
-                    validPaymentType._deleted = true;
-                    this.paymentTypeCollection.update(validPaymentType)
+            this._validate(store)
+                .then(validStore => {
+                    validStore._deleted = true;
+                    this.storeCollection.update(validStore)
                         .then(id => {
                             resolve(id);
                         })
@@ -202,12 +202,12 @@ module.exports = class PaymentTypeManager {
         });
     }
  
-    _validate(paymentType) {
+    _validate(store) {
         var errors = {};
         return new Promise((resolve, reject) => {
-            var valid = new PaymentType(paymentType);
+            var valid = new Store(store);
             // 1. begin: Declare promises.
-            var getPaymentType = this.paymentTypeCollection.singleOrDefault({
+            var getStore = this.storeCollection.singleOrDefault({
                 "$and": [{
                     _id: {
                         '$ne': new ObjectId(valid._id)
@@ -219,13 +219,13 @@ module.exports = class PaymentTypeManager {
             // 1. end: Declare promises.
 
             // 2. begin: Validation.
-            Promise.all([getPaymentType])
+            Promise.all([getStore])
                 .then(results => {
-                    var _paymentType = results[0];
+                    var _store = results[0];
 
                     if (!valid.code || valid.code == '')
                         errors["code"] = "code is required";
-                    else if (_paymentType) {
+                    else if (_store) {
                         errors["code"] = "code already exists";
                     }
 
