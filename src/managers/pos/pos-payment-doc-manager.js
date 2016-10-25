@@ -36,6 +36,9 @@ module.exports = class PaymentManager {
         
         var TransferOutDocManager = require('../inventory/transfer-out-doc-manager');
         this.transferOutDocManager = new TransferOutDocManager(db, user);
+        
+        var InventoryManager = require('../inventory/inventory-manager');
+        this.inventoryManager = new InventoryManager(db, user);
     }
 
     read(paging) {
@@ -287,7 +290,8 @@ module.exports = class PaymentManager {
                     var _cardType = results[3];
                     var _paymentType = results[4];
                     var _voucherType = results[5];
-
+                    var articleVariants = results.slice(6, results.length) 
+                     
                     if (_payment) {
                         errors["code"] = "code already exists";
                     }  
@@ -303,7 +307,6 @@ module.exports = class PaymentManager {
                     valid.totalProduct = 0;
                     valid.subTotal = 0;
                     valid.grandTotal = 0;
-                    var articleVariants = results.slice(6, results.length) 
                     if (articleVariants.length > 0) {
                         var itemErrors = [];
                         for (var variant of articleVariants) {
@@ -498,9 +501,48 @@ module.exports = class PaymentManager {
                         reject(new ValidationError('data does not pass validation', errors));
                     }
 
-                    valid = new Payment(valid);
-                    valid.stamp(this.user.username, 'manager');
-                    resolve(valid);
+                    // valid = new Payment(valid);
+                    // valid.stamp(this.user.username, 'manager');
+                    // resolve(valid);
+
+                    var getStocks = [];
+                    for (var variant of articleVariants) {
+                        getStocks.push(this.inventoryManager.getByStorageIdAndArticleVarianIdOrDefault(_store.storageId, variant._id));
+                    } 
+                    Promise.all(getStocks) 
+                        .then(resultStocks => { 
+                            var itemErrors = [];
+                            for(var stock of resultStocks) { 
+                                var index = resultStocks.indexOf(stock);
+                                var item = valid.items[index];
+                                var itemError = {};
+                                if(stock) {
+                                    if (item.quantity > stock.quantity) {
+                                        itemError["quantity"] = "Quantity is bigger than Stock";
+                                    } 
+                                }
+                                itemErrors.push(itemError);
+                            }
+                            for (var itemError of itemErrors) {
+                                for (var prop in itemError) {
+                                    errors.items = itemErrors;
+                                    break;
+                                }
+                                if (errors.items)
+                                    break;
+                            }
+                            for (var prop in errors) {
+                                var ValidationError = require('../../validation-error');
+                                reject(new ValidationError('data does not pass validation', errors));
+                            }
+                    
+                            valid = new Payment(valid);
+                            valid.stamp(this.user.username, 'manager');
+                            resolve(valid);
+                        })
+                        .catch(e => { 
+                            reject(e);
+                        })
                 })
                 .catch(e => { 
                     for (var prop in errors) {
