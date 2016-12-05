@@ -13,17 +13,17 @@ class CardTypeDataUtil {
     }
 
     getNewData() {
-        var CardType = require('bateeq-models').master.CardType;
-        var cardType = new CardType();
+        var Model = require('bateeq-models').master.CardType;
+        var data = new Model();
         
-        var now = new Date();
-        var stamp = now / 1000 | 0;
+        // var now = new Date();
+        // var stamp = now / 1000 | 0;
         var code = generateCode();
         
-        cardType.code = code;
-        cardType.name = `name[${code}]`;
-        cardType.description = `description for ${code}`;
-        return Promise.resolve(cardType);
+        data.code = code;
+        data.name = `name[${code}]`;
+        data.description = `description for ${code}`;
+        return Promise.resolve(data);
     }
 }
 module.exports = new CardTypeDataUtil();

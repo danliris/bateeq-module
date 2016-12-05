@@ -64,6 +64,8 @@ describe('#bateeq-module', function(done) {
     // test('@manager/sales-return-manager', './managers/sales-return-manager-test');
 
     //new unit test
-    // test("@manager/master/bank/basic", "./managers/master/bank/index");
+    test("@manager/master/bank/basic", "./managers/master/bank/index");
     test("@manager/master/card-type/basic", "./managers/master/card-type/index");
+    test("@manager/master/finished-goods/basic", "./managers/master/finished-goods/index");
+    test("@manager/master/item/basic", "./managers/master/item/index");
 })

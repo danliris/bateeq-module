@@ -13,18 +13,18 @@ class BankDataUtil {
     }
 
     getNewData() {
-    var Bank = require("bateeq-models").master.Bank;
-    var bank = new Bank();
-
-    var now = new Date();
-    // var stamp = now / 1000 | 0;
-    var code = generateCode();
-
-    bank.code = code;
-    bank.name = `name[${code}]`;
-    bank.description = `description for ${code}`; 
-
-    return Promise.resolve(bank);
+        var Model = require("bateeq-models").master.Bank;
+        var data = new Model();
+        
+        // var now = new Date();
+        // var stamp = now / 1000 | 0;
+        var code = generateCode();
+        
+        data.code = code;
+        data.name = `name[${code}]`;
+        data.description = `description for ${code}`; 
+        
+        return Promise.resolve(data);
     }
 }
 module.exports = new BankDataUtil();
