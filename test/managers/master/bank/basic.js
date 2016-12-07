@@ -6,15 +6,15 @@ var BankManager = require("../../../../src/managers/master/bank-manager");
 var instanceManager = null;
 
 
-before('#00. connect db', function(done) {
+before("#00. connect db", function(done) {
     helper.getDb()
-        .then(db => {
+        .then((db) => {
             instanceManager = new BankManager(db, {
-                username: 'unit-test'
+                username: "unit-test"
             });
             done();
         })
-        .catch(e => {
+        .catch((e) => {
             done(e);
         })
 });
@@ -40,12 +40,12 @@ var createdId;
 it("#02. should success when create new data", function(done) {
     Bank.getNewData()
     .then((data)=> instanceManager.create(data))
-    .then(id => {
+    .then((id) => {
         id.should.be.Object();
         createdId = id;
         done();
     })
-    .catch(e => {
+    .catch((e) => {
         done(e);
     })
 });
@@ -60,7 +60,7 @@ it("#03. should success when get created data with id", function(done) {
         createdData = data;
         done();
     })
-    .catch(e => {
+    .catch((e) => {
         done(e);
     })
 })
@@ -69,14 +69,14 @@ it("#04. should error when create new data with same code", function(done){
     var data = Object.assign({}, createdData);
     delete data._id;
     instanceManager.create(data)
-        .then(id => {
+        .then((id) => {
             id.should.be.Object();
             createdId = id;
             done("Should not be able to create data with same code");
         })
-        .catch(e => {
+        .catch((e) => {
             try {
-                e.errors.should.have.property('code');
+                e.errors.should.have.property("code");
                 done();
             }
             catch (e) {
@@ -85,34 +85,34 @@ it("#04. should error when create new data with same code", function(done){
         })
 });
 
-it(`#05. should success when update created data`, function(done) {
+it("#05. should success when update created data", function(done) {
 
-    createdData.code += '[updated]';
-    createdData.name += '[updated]';
-    createdData.description += '[updated]'; 
+    createdData.code += "[updated]";
+    createdData.name += "[updated]";
+    createdData.description += "[updated]"; 
 
     instanceManager.update(createdData)
-        .then(id => {
+        .then((id) => {
             createdId.toString().should.equal(id.toString());
             done();
         })
-        .catch(e => {
+        .catch((e) => {
             done(e);
         });
 });
 
-it(`#06. should success when get updated data with id`, function(done) {
+it("#06. should success when get updated data with id", function(done) {
     instanceManager.getSingleByQuery({
             _id: createdId
         })
-        .then(data => {
+        .then((data) => {
             validate(data);
             data.code.should.equal(createdData.code);
             data.name.should.equal(createdData.name);
             data.description.should.equal(createdData.description); 
             done();
         })
-        .catch(e => {
+        .catch((e) => {
             done(e);
         })
 });
@@ -160,18 +160,18 @@ it("#08. should success when read data", function(done) {
         });
 });
 
-it(`#09. should success when delete data`, function(done) {
+it("#09. should success when delete data", function(done) {
     instanceManager.delete(createdData)
-        .then(id => {
+        .then((id) => {
             createdId.toString().should.equal(id.toString());
             done();
         })
-        .catch(e => {
+        .catch((e) => {
             done(e);
         });
 });
 
-it(`#10. should _deleted=true`, function(done) {
+it("#10. should _deleted=true", function(done) {
     instanceManager.getSingleByQuery({
             _id: createdId
         })
@@ -198,7 +198,7 @@ it("#11. should success when destroy data with id", function(done) {
         });
 });
 
-it(`#12. should null when get destroyed data`, function(done) {
+it("#12. should null when get destroyed data", function(done) {
     instanceManager.getSingleByIdOrDefault(createdId)
         .then((data) => {
             should.equal(data, null);

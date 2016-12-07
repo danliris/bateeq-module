@@ -158,12 +158,12 @@ it(`#1.02. [Discount Item] should success when get created data with id`, functi
     manager.getSingleByQuery({
             _id: createdId
         })
-        .then(data => {
+        .then((data) => {
             validate.promo(data);
             createdData = data;
             done();
         })
-        .catch(e => {
+        .catch((e) => {
             done(e);
         })
 });

@@ -83,7 +83,7 @@ module.exports = class CardTypeManager extends BaseManager {
 
             // 2. begin: Validation.
             Promise.all([getCardType])
-                .then(results => {
+                .then((results) => {
                     var _cardType = results[0];
 
                     if (!valid.code || valid.code == '')
@@ -101,10 +101,10 @@ module.exports = class CardTypeManager extends BaseManager {
                         reject(new ValidationError('data does not pass validation', errors));
                     }
 
-                    valid.stamp(this.user.username, 'manager');
+                    valid.stamp(this.user.username, "manager");
                     resolve(valid);
                 })
-                .catch(e => {
+                .catch((e) => {
                     reject(e);
                 });
         });
