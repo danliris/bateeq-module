@@ -6,6 +6,7 @@ var BankManager = require("../../../../src/managers/master/bank-manager");
 var instanceManager = null;
 
 
+<<<<<<< HEAD
 before("#00. connect db", function(done) {
     helper.getDb()
         .then((db) => {
@@ -15,6 +16,17 @@ before("#00. connect db", function(done) {
             done();
         })
         .catch((e) => {
+=======
+before('#00. connect db', function(done) {
+    helper.getDb()
+        .then(db => {
+            instanceManager = new BankManager(db, {
+                username: 'unit-test'
+            });
+            done();
+        })
+        .catch(e => {
+>>>>>>> refs/remotes/upstream/dev
             done(e);
         })
 });
@@ -40,12 +52,20 @@ var createdId;
 it("#02. should success when create new data", function(done) {
     Bank.getNewData()
     .then((data)=> instanceManager.create(data))
+<<<<<<< HEAD
     .then((id) => {
+=======
+    .then(id => {
+>>>>>>> refs/remotes/upstream/dev
         id.should.be.Object();
         createdId = id;
         done();
     })
+<<<<<<< HEAD
     .catch((e) => {
+=======
+    .catch(e => {
+>>>>>>> refs/remotes/upstream/dev
         done(e);
     })
 });
@@ -60,7 +80,11 @@ it("#03. should success when get created data with id", function(done) {
         createdData = data;
         done();
     })
+<<<<<<< HEAD
     .catch((e) => {
+=======
+    .catch(e => {
+>>>>>>> refs/remotes/upstream/dev
         done(e);
     })
 })
@@ -69,14 +93,24 @@ it("#04. should error when create new data with same code", function(done){
     var data = Object.assign({}, createdData);
     delete data._id;
     instanceManager.create(data)
+<<<<<<< HEAD
         .then((id) => {
+=======
+        .then(id => {
+>>>>>>> refs/remotes/upstream/dev
             id.should.be.Object();
             createdId = id;
             done("Should not be able to create data with same code");
         })
+<<<<<<< HEAD
         .catch((e) => {
             try {
                 e.errors.should.have.property("code");
+=======
+        .catch(e => {
+            try {
+                e.errors.should.have.property('code');
+>>>>>>> refs/remotes/upstream/dev
                 done();
             }
             catch (e) {
@@ -85,6 +119,7 @@ it("#04. should error when create new data with same code", function(done){
         })
 });
 
+<<<<<<< HEAD
 it("#05. should success when update created data", function(done) {
 
     createdData.code += "[updated]";
@@ -97,22 +132,48 @@ it("#05. should success when update created data", function(done) {
             done();
         })
         .catch((e) => {
+=======
+it(`#05. should success when update created data`, function(done) {
+
+    createdData.code += '[updated]';
+    createdData.name += '[updated]';
+    createdData.description += '[updated]'; 
+
+    instanceManager.update(createdData)
+        .then(id => {
+            createdId.toString().should.equal(id.toString());
+            done();
+        })
+        .catch(e => {
+>>>>>>> refs/remotes/upstream/dev
             done(e);
         });
 });
 
+<<<<<<< HEAD
 it("#06. should success when get updated data with id", function(done) {
     instanceManager.getSingleByQuery({
             _id: createdId
         })
         .then((data) => {
+=======
+it(`#06. should success when get updated data with id`, function(done) {
+    instanceManager.getSingleByQuery({
+            _id: createdId
+        })
+        .then(data => {
+>>>>>>> refs/remotes/upstream/dev
             validate(data);
             data.code.should.equal(createdData.code);
             data.name.should.equal(createdData.name);
             data.description.should.equal(createdData.description); 
             done();
         })
+<<<<<<< HEAD
         .catch((e) => {
+=======
+        .catch(e => {
+>>>>>>> refs/remotes/upstream/dev
             done(e);
         })
 });
@@ -160,6 +221,7 @@ it("#08. should success when read data", function(done) {
         });
 });
 
+<<<<<<< HEAD
 it("#09. should success when delete data", function(done) {
     instanceManager.delete(createdData)
         .then((id) => {
@@ -167,11 +229,24 @@ it("#09. should success when delete data", function(done) {
             done();
         })
         .catch((e) => {
+=======
+it(`#09. should success when delete data`, function(done) {
+    instanceManager.delete(createdData)
+        .then(id => {
+            createdId.toString().should.equal(id.toString());
+            done();
+        })
+        .catch(e => {
+>>>>>>> refs/remotes/upstream/dev
             done(e);
         });
 });
 
+<<<<<<< HEAD
 it("#10. should _deleted=true", function(done) {
+=======
+it(`#10. should _deleted=true`, function(done) {
+>>>>>>> refs/remotes/upstream/dev
     instanceManager.getSingleByQuery({
             _id: createdId
         })
@@ -198,7 +273,11 @@ it("#11. should success when destroy data with id", function(done) {
         });
 });
 
+<<<<<<< HEAD
 it("#12. should null when get destroyed data", function(done) {
+=======
+it(`#12. should null when get destroyed data`, function(done) {
+>>>>>>> refs/remotes/upstream/dev
     instanceManager.getSingleByIdOrDefault(createdId)
         .then((data) => {
             should.equal(data, null);
