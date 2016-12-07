@@ -1,6 +1,10 @@
 language: node_js
 node_js:
+<<<<<<< HEAD
   - "4" 
+=======
+  - "6"
+>>>>>>> update travis.yml
 services:
 - mongodb
 addons:
