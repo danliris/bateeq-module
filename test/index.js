@@ -78,7 +78,7 @@ describe('#bateeq-module', function (done) {
     // test("@manager/master/card-type/basic", "./managers/master/card-type/index");
     // test("@manager/master/finished-goods/basic", "./managers/master/finished-goods/index");
     // test("@manager/master/item/basic", "./managers/master/item/index");
-    test("@manager/sales/promo", "./managers/sales/promo/index");
+    // test("@manager/sales/promo", "./managers/sales/promo/index");
 
 
     // test('@manager/bank-manager', './managers/bank-manager-test'); 
@@ -90,14 +90,16 @@ describe('#bateeq-module', function (done) {
 
     //new unit test 
 
-    test('@managers/master/material', './managers/master/material');
-    test('@managers/master/module', './managers/master/module');
-    test('@managers/master/storage', './managers/master/storage');
-    test('@managers/master/store', './managers/master/store');
-    test('@managers/master/supplier', './managers/master/supplier');
-    test("@manager/master/bank", "./managers/master/bank");
-    test("@manager/master/card-type", "./managers/master/card-type");
-    test("@manager/master/finished-goods", "./managers/master/finished-goods");
-    test("@manager/master/item", "./managers/master/item");
+    // test('@managers/master/material', './managers/master/material');
+    // test('@managers/master/module', './managers/master/module');
+    // test('@managers/master/storage', './managers/master/storage');
+    // test('@managers/master/store', './managers/master/store');
+    // test('@managers/master/supplier', './managers/master/supplier');
+    // test("@manager/master/bank", "./managers/master/bank");
+    // test("@manager/master/card-type", "./managers/master/card-type");
+    // test("@manager/master/finished-goods", "./managers/master/finished-goods");
+    // test("@manager/master/item", "./managers/master/item");
+    test("@manager/sales/promo", "./managers/sales/promo");
+    
 
 })
