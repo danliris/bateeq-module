@@ -6,7 +6,7 @@ inventoryMap.set("inventory", require('./src/managers/inventory/inventory-manage
 inventoryMap.set("inventory-movement", require('./src/managers/inventory/inventory-movement-manager'));
 
 inventoryMap.set("efr-kb-rtt", require('./src/managers/inventory/efr-kb-rtt-manager'));
-//inventoryMap.set("adjustment", require('./src/managers/inventory/adjustment-manager'));
+inventoryMap.set("adjustment", require('./src/managers/inventory/adjustment-manager'));
 inventoryMap.set("efr-kb-fng", require('./src/managers/inventory/efr-kb-fng-manager'));
 inventoryMap.set("efr-kb-rtf", require('./src/managers/inventory/efr-kb-rtf-manager'));
 inventoryMap.set("efr-kb-rtp", require('./src/managers/inventory/efr-kb-rtp-manager'));
@@ -27,6 +27,7 @@ inventoryMap.set("efr-tb-sab", require('./src/managers/inventory/efr-tb-sab-mana
 inventoryMap.set("efr-tb-alt", require('./src/managers/inventory/efr-tb-alt-manager'));
 inventoryMap.set("efr-hp-fng", require('./src/managers/inventory/efr-hp-fng-manager'));
 inventoryMap.set("inv-ro-report", require('./src/managers/inventory/inv-ro-report-manager'));
+inventoryMap.set("stock-opname-doc", require('./src/managers/inventory/stock-opname-doc-manager'));
 
 var merchandiserMap = new Map();
 merchandiserMap.set("efr-pk", require('./src/managers/merchandiser/efr-pk-manager'));
@@ -49,7 +50,7 @@ module.exports = {
         AlterationOutManager: inventoryMap.get("efr-kb-alt"),
         AlterationInManager: inventoryMap.get("efr-tb-alt"),
         TokoTransferStokManager: inventoryMap.get("efr-kb-rtt"),
-       // AdjustmentStockManager: inventoryMap.get("adjustment"),
+        AdjustmentStockManager: inventoryMap.get("adjustment"),
         FinishingKirimBarangBaruManager: inventoryMap.get("efr-kb-fng"),
         PusatReturTokoKirimBarangReturManager: inventoryMap.get("efr-kb-rtf"),
         TokoKirimBarangReturnManager: inventoryMap.get("efr-kb-rtp"),
@@ -65,6 +66,7 @@ module.exports = {
         PusatReturTokoTerimaBarangReturManager: inventoryMap.get("efr-tb-brt"),
         FinishingTerimaKomponenManager: inventoryMap.get("efr-tb-sab"),
         TransferInDocExtManager: inventoryMap.get("transfer-in-doc-ext"),
+        StockOpnameDocManager: inventoryMap.get("stock-opname-doc"),
         map: inventoryMap
     },
     merchandiser: {
@@ -86,7 +88,17 @@ module.exports = {
         MaterialManager: require('./src/managers/master/material-manager'),
         article: {
             ArticleMotifManager: require('./src/managers/master/article/article-motif-manager'),
-            ArticleColorManager: require('./src/managers/master/article/article-color-manager')
+            ArticleColorManager: require('./src/managers/master/article/article-color-manager'),
+            ArticleCounterManager: require('./src/managers/master/article/article-counter-manager'),
+            ArticleSubCounterManager: require('./src/managers/master/article/article-sub-counter-manager'),
+            ArticleSeasonManager: require('./src/managers/master/article/article-season-manager'),
+            ArticleMaterialManager: require('./src/managers/master/article/article-material-manager'),
+            ArticleMaterialCompositionManager: require('./src/managers/master/article/article-material-composition-manager'),
+            ArticleSubMaterialCompositionManager: require('./src/managers/master/article/article-sub-material-composition-manager'),
+            ArticleCollectionManager: require('./src/managers/master/article/article-collection-manager'),
+            ArticleSubCollectionManager: require('./src/managers/master/article/article-sub-collection-manager'),
+            ArticleProcessManager: require('./src/managers/master/article/article-process-manager'),
+            ArticleSubProcessManager: require('./src/managers/master/article/article-sub-process-manager')
         },
         ExpeditionServiceManager: require('./src/managers/master/expedition-service-manager')
     },
