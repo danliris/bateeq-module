@@ -1,0 +1,89 @@
+var helper = require("../../../helper");
+var ReportManager = require("../../../../src/managers/inventory/report-manager");
+var InventoryDataUtil = require("../../../../test/data-util/inventory/report-manager-data-util");
+var reportManager = null;
+var realizationOrder = null;
+
+function processingData(data) {
+    var dataInventory = InventoryDataUtil.getInventoryData(data);
+
+    return Promise.all([dataInventory])
+        .then(result => {
+            if (result[0].item.article.realizationOrder) {
+                var id = result[0].item.article.realizationOrder;
+                return Promise.resolve(id);
+            }
+        })
+        .catch(e => {
+            return Promise.reject(e);
+        });
+}
+
+before('#00. connect db', function (done) {
+    helper.getDb()
+        .then(db => {
+            var data = require("../../../data");
+            data(db).then((results) => {
+                reportManager = new ReportManager(db, 'unit-test');
+
+                processingData(data).then(id => {
+                    realizationOrder = id;
+                    done();
+                })
+                    .catch(e => {
+                        done(e);
+                    });
+            })
+                .catch(e => {
+                    done(e);
+                });
+        })
+        .catch(e => {
+            done(e);
+        })
+});
+
+it('#01. test report per ro with realization order', function (done) {
+    helper.getDb()
+        .then(db => {
+            reportManager.getReportItemsByRealizationOrder(realizationOrder)
+                .then(result => {
+                    if (result) {
+                        console.log("Done: with result");
+                        done();
+                    } else {
+                        console.log("Done: with no result");
+                        done();
+                    }
+                })
+                .catch(e => {
+                    done(e);
+                });
+        })
+        .catch(e => {
+            done(e);
+        });
+});
+
+it('#02. test report per ro with no realization order', function (done) {
+    helper.getDb()
+        .then(db => {
+            realizationOrder = "";
+            reportManager.getReportItemsByRealizationOrder(realizationOrder)
+                .then(result => {
+                    if (result) {
+                        console.log("Done: with result");
+                        done();
+                    } else {
+                        console.log("Done: with no result");
+                        done();
+                    }
+                })
+                .catch(e => {
+                    done(e);
+                });
+        })
+        .catch(e => {
+            done(e);
+        });
+});
