@@ -1,6 +1,6 @@
-// describe("BASIC CRUD SCENARIOS", function() {
-//     require("./basic");
-// });
+describe("BASIC CRUD SCENARIOS", function() {
+    require("./new-test");
+});
 
 // describe("CREATE SCENARIOS", function() {
 //     require("./create");
