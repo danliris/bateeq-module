@@ -229,12 +229,16 @@ module.exports = class SPKBarangManager extends BaseManager {
 
     readNotReceivedAndDraft(filter) {
         return new Promise((resolve, reject) => {
+            const regex = new RegExp("GDG", "i");
+
             var query = {
                 _deleted: false,
                 // isReceived: false,
                 // isDraft: false,
                 reference: filter.reference,
-                "source.code": "GDG.01"
+                "source.code": {
+                    '$regex': regex
+                }
             };
             var _select = ["code", "packingList",
                 "password"];
