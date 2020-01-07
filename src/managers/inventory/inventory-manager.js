@@ -96,14 +96,24 @@ module.exports = class InventoryManager extends BaseManager {
                         '$regex': regex
                     }
                 };
+                var filterArticle = {
+                    'item.article.realizationorder': {
+                        '$regex': regex
+                    }
+                };
+                var filterDomesticSale = {
+                    'item.domesticsale': {
+                        '$regex': regex
+                    }
+                };
                 var $or = {
-                    '$or': [filterCode, filterName]
+                    '$or': [filterCode, filterName, filterArticle, filterDomesticSale]
                 };
 
                 query['$and'].push($or);
             }
 
-            var _select = ["storageId", "itemId", "item.code", "item.name", "quantity"];
+            var _select = ["storageId", "storage.code", "storage.name", "itemId", "item.code", "item.name", "item.article.realizationOrder", "quantity", "item.domesticSale"];
 
 
             this.collection
@@ -154,6 +164,143 @@ module.exports = class InventoryManager extends BaseManager {
     //             });
     //     });
     // }
+
+    _getQueryQ(paging) {
+        var deletedFilter = {
+            _deleted: false
+        }, 
+        
+        keywordFilter = {};
+        
+        var queryq = {};
+        if (paging.keyword) {
+            var regex = new RegExp(paging.keyword, "i");
+
+            var filterItemCode = {
+                'item.code': {
+                    '$regex': regex
+                }
+            };
+            var filterItemName = {
+                'item.name': {
+                    '$regex': regex
+                }
+            };
+            var filterArticle = {
+                'item.article.realizationorder': {
+                    '$regex': regex
+                }
+            };
+            keywordFilter = {
+                '$or': [filterItemCode, filterItemName, filterArticle]
+            };
+        }
+        queryq = { '$and': [deletedFilter, paging.filter, keywordFilter] }
+        return queryq;
+    }
+
+
+    _getQtyCurrentStocks(code, paging){
+        var queryq = this._getQueryQ(paging);
+        queryq = Object.assign(queryq, {
+            "storage._id": new ObjectId(code)
+        });
+        let currentQtyItems = [
+            {
+                $match:queryq
+            },
+            {
+                $group: {
+                    _id: { storageId: "$storage._id", itemCode: "$item.code" },
+                    storageCode: { $first: "$storage.code" },
+                    storageName: { $first: "$storage.name" },
+                    itemName: { $first: "$item.name" },
+                    Qty : { $first: "$quantity" }
+                }
+            },
+
+            {$project: {
+                _id:  
+                { storageId: "$_id.storageId",
+                  storageCode: "$storageCode",
+                  storageName: "$storageName",
+                  itemCode:  "$_id.itemCode",
+                  itemName: "$itemName",
+                  Qtynya : "$Qty"}}}]
+       
+                  let query = this.inventoriesCollection.aggregate(currentQtyItems, { allowDiskUse: true }).toArray();
+        return query;
+    }
+
+    _getAgeCurrentItems(code,paging) {
+       var querya = this._getQueryQ(paging);
+        querya = Object.assign(querya, {
+            "storage._id": new ObjectId(code),
+            "type" :"IN"
+        });
+        let currentAgeItems = [
+            {
+                $match:querya
+            },
+            { $sort: { _createdDate:-1 } },
+
+            {
+                $group: {
+                    _id: { storageId: "$storage._id", itemCode: "$item.code" },
+                    storageCode: { $first: "$storage.code" },
+                    storageName: { $first: "$storage.name" },
+                    itemName: { $first: "$item.name" },
+                    Tanggal :{ $first: "$_createdDate" }
+                }
+            },
+
+            {$project: {
+                _id:  
+                { storageId: "$_id.storageId",
+                  storageCode: "$storageCode",
+                  storageName: "$storageName",
+                  itemCode:  "$_id.itemCode",
+                  itemName: "$itemName",
+                  createdDate : "$Tanggal",
+                  Selisih_Hari: { $trunc: {$divide: [{ $subtract: [new Date(),'$Tanggal'] },1000 * 60 * 60 * 24]}}}}}]
+       
+                  let query = this.inventoryMovementCollection.aggregate(currentAgeItems, { allowDiskUse: true }).toArray();
+        return query;
+    }
+
+    _combineStocks(QtyItems,AgeItems) {
+        let allStocks = [];
+        QtyItems.forEach(item => {
+            let stock = {
+                storagename: item._id.storageName,
+                itemcode : item._id.itemCode,
+                itemname : item._id.itemName,
+                quantity: item._id.Qtynya,
+            };
+            let found = AgeItems.find(es => { return item._id.itemCode === es._id.itemCode });
+            if (found) {
+                stock.storagecode = found._id.storageCode,
+                stock.sls = found._id.Selisih_Hari;
+            }
+            allStocks.push(stock);
+       });
+
+        return allStocks;
+    }
+
+    getOverallStock(storageId, query) {
+        let QtyItemsQuery = this._getQtyCurrentStocks(storageId, query);
+        let AgeItemsQuery = this._getAgeCurrentItems(storageId, query);
+        return new Promise((resolve, reject) => {
+            return Promise.all([QtyItemsQuery, AgeItemsQuery])
+                .then(results => {
+                    let QtyItems = results[0];
+                    let AgeItems = results[1];
+                    let finalStocks = this._combineStocks(QtyItems,AgeItems);
+                    resolve(finalStocks);
+                })
+        })
+    }
 
     getByStorageIdAndItemId(storageId, itemId) {
         return new Promise((resolve, reject) => {
