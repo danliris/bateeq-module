@@ -15,6 +15,7 @@ module.exports = class InventoryManager extends BaseManager {
     constructor(db, user) {
         super(db, user);
         this.collection = this.db.use(map.inventory.Inventory);
+        this.inventoriesCollection = this.db.use(map.inventory.Inventory);
         this.inventoryMovementCollection = this.db.use(map.inventory.InventoryMovement);
 
         var StorageManager = require('../master/storage-manager');
