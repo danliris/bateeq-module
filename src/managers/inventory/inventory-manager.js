@@ -768,4 +768,39 @@ module.exports = class InventoryManager extends BaseManager {
 
         });
     }
+
+    getSumInventoryByItem(itemcode) {
+
+        return new Promise((resolve, reject) => {
+            
+            if (itemcode && itemcode !== "") {
+                
+                let currentQtyItems = [
+                    {
+                        $match:{"item.code": itemcode.toString(), '_deleted' : false }
+                    },
+                    {
+                        $group: {
+                            _id: { storageId: "$storage._id", itemCode: "$item.code" },
+                            name : { $first: "$item.name" },
+                            code : { $first: "$item.code"},
+                            qty : {$sum:"$quantity"}
+                        }
+                    }
+                ]
+
+                
+                this.collection.aggregate(currentQtyItems)
+                .toArray().then(result =>
+                    resolve(result));
+            }
+            else {
+                resolve(null)
+            }
+            
+
+        });
+       
+    }
+
 };
