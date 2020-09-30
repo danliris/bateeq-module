@@ -21,6 +21,7 @@ before('#00. connect db', function (done) {
                     testData = result;
                     storageId = testData.storages["UT-FNG"]._id.toString();
                     itemId = testData.items["UT-AV1"]._id.toString(); 
+                    itemcode = testData.items["UT-AV1"].code.toString();
                     done();
                 });
         })
@@ -76,6 +77,17 @@ it('#04. should success when read by storageId and itemId', function (done) {
         .then(inventory => {
             inventory.item.remark = "";
             validate.inventory(inventory)
+            done();
+        })
+        .catch(e => {
+            done(e);
+        })
+});
+
+it('#05 should success when read by ItemCode', function (done) {
+    manager.getSumInventoryByItem(itemcode)
+        .then(inventories => {
+
             done();
         })
         .catch(e => {
