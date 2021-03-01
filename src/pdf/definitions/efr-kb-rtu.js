@@ -52,8 +52,8 @@ module.exports = function (rtu, spkDoc) {
                 stack: [
                     { text: "PT BATEEQ RETAILINDO UTAMA", style: ['size12', 'bold'] },
                     {
-                        text: "Kel. Banaran, Kec. Grogol, Kab.Sukoharjo 57193 Jawa Tengah, Indonesia",
-                        style: ['size12']
+                        text: "Jln. Merapi No. 23 RT.000 RW.000 Banaran, Grogol Kab. Sukoharjo Jawa Tengah",
+                        style: ['size07']
                     }
                 ]
             },
